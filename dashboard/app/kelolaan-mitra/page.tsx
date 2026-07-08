@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import DataTable from "../components/DataTable";
 
 export default function KelolaanMitraPage() {
   const [data, setData] = useState<any[]>([]);
@@ -11,15 +12,15 @@ export default function KelolaanMitraPage() {
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // 🌟 STATE USER DROPDOWN FILTER UNTUK ADMIN
+  // STATE USER DROPDOWN FILTER UNTUK ADMIN
   const [picFilterAdmin, setPicFilterAdmin] = useState("Semua");
 
-  // 🌟 STATE USER LOGIN & SESSION (Aman dari Eror Hydration SSR)
+  // STATE USER LOGIN & SESSION (Aman dari Eror Hydration SSR)
   const [isSessionReady, setIsSessionReady] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState("Satria");
   const [userRole, setUserRole] = useState("Sales");
 
-  // 🌟 State Mode Filter: "harian" atau "bulanan"
+  // State Mode Filter: "harian" atau "bulanan"
   const [modeFilter, setModeFilter] = useState<"harian" | "bulanan">("harian");
 
   const listBulan = [
@@ -38,17 +39,11 @@ export default function KelolaanMitraPage() {
     return new Date().toISOString().substring(0, 7); 
   };
 
-  // 📅 State Filter Tanggal (Harian) & Bulan (Bulanan)
+  // State Filter Tanggal (Harian) & Bulan (Bulanan)
   const [tanggalFilter, setTanggalFilter] = useState(getTodayString());
   const [bulanFilter, setBulanFilter] = useState(getTargetMonthString());
 
-  const getNamaBulanLokal = (tglStr: string) => {
-    if (!tglStr) return listBulan[new Date().getMonth()];
-    const [_, month] = tglStr.split("-");
-    return listBulan[Number(month) - 1];
-  };
-
-  // Helper untuk membersihkan dan menstandarkan nama panggilan pendek (TOLERAN & SINKRON)
+  // Helper nama panggilan pendek
   const dapatkanNamaPanggilan = (namaLengkap: string) => {
     if (!namaLengkap) return "Satria";
     const namaKecil = namaLengkap.toLowerCase().trim();
@@ -76,7 +71,6 @@ export default function KelolaanMitraPage() {
 
   const [formInput, setFormInput] = useState(initialFormState);
 
-  // AMAN SSR: Membaca session login di client-side setelah mounted
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedPic = localStorage.getItem("user_pic");
@@ -100,7 +94,6 @@ export default function KelolaanMitraPage() {
     }
   }, []);
 
-  // 🔒 SINKRONISASI MODAL AUTOMATIC LOCK
   useEffect(() => {
     if (isModalOpen && !isEditMode) {
       if (typeof window !== "undefined") {
@@ -148,7 +141,6 @@ export default function KelolaanMitraPage() {
     fetchListMitraMaster();
   }, []);
 
-  // 📊 LIVE DISTRIBUSI DAFTAR PIC UNIK DARI DATABASE KELOLAAN MITRA
   const daftarPicUnik = useMemo(() => {
     const setPic = new Set<string>();
     data.forEach((item: any) => {
@@ -201,7 +193,7 @@ export default function KelolaanMitraPage() {
       });
 
       if (response.ok) {
-        alert(isEditMode ? "Data Kelolaan Mitra Berhasil Diperbarui!" : "Sakti! Data Kelolaan Mitra Berhasil Disimpan Permanen!");
+        alert(isEditMode ? "Data Kelolaan Mitra Berhasil Diperbarui!" : "Data Kelolaan Mitra Berhasil Disimpan!");
         setIsModalOpen(false);
         setTanggalFilter(formInput.tanggalInput);
         setBulanFilter(formInput.tanggalInput.substring(0, 7));
@@ -276,18 +268,6 @@ export default function KelolaanMitraPage() {
     return `${day}/${month}/${year}`;
   };
 
-  const formatBulanIndo = (blnStr: string) => {
-    if (!blnStr || !blnStr.includes("-")) return blnStr;
-    const [year, month] = blnStr.split("-");
-    const namaBulan = new Date(Number(year), Number(month) - 1).toLocaleString("id-ID", { month: "long" });
-    return `${namaBulan} ${year}`;
-  };
-
-  const formatRupiah = (val: any) => {
-    return `Rp ${(Number(val) || 0).toLocaleString("id-ID")}`;
-  };
-
-  // 🔍 LOGIKA FILTER UTAMA HAK AKSES PER PIC SALES & ADMIN MULTI-USER
   const filteredData = data.filter((item: any) => {
     const itemPicPanggilan = dapatkanNamaPanggilan(item.picNasabah || "");
     
@@ -298,7 +278,6 @@ export default function KelolaanMitraPage() {
     
     const isUserAdmin = userRole.toLowerCase() === "admin";
     
-    // 🔒 PROSES FILTER AKSES KETAT PER ROLE PIC
     let matchesRoleAkses: boolean;
     if (isUserAdmin) {
       matchesRoleAkses = picFilterAdmin === "Semua" || itemPicPanggilan.toLowerCase() === picFilterAdmin.toLowerCase();
@@ -321,28 +300,23 @@ export default function KelolaanMitraPage() {
   });
 
   return (
-    <div className="max-w-7xl mx-auto space-y-7 p-6 bg-[#F5F5F7] min-h-screen font-sans text-[#1C1C1E]">
+    <div className="max-w-7xl mx-auto space-y-7 p-6 bg-[#FAF9F6] min-h-screen font-sans text-[#1C1C1E]">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between bg-white rounded-2xl p-6 border border-[#E8E8ED] shadow-sm gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between bg-white rounded-2xl p-6 border border-gray-200 shadow-sm gap-4">
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[#1D1D1F]">Data Kelolaan Mitra</h1>
-          <p className="text-xs text-[#86868B] mt-0.5 font-medium">Monitoring integrasi referral nasabah PT PIPOSMART DIGITAL INDONESIA.</p>
+          <p className="text-xs text-gray-500 mt-0.5 font-medium">Monitoring integrasi referral nasabah PT PIPOSMART DIGITAL INDONESIA.</p>
           <div className="text-xs text-gray-400 font-bold mt-1">
-            Logged in: <span className="text-[#007AFF]">👤 {isSessionReady ? loggedInUser : "Loading..."} ({userRole})</span>
-            {isSessionReady && userRole.toLowerCase() === "admin" && (
-              <span className="ml-2 text-[10px] bg-blue-50 text-[#007AFF] border border-blue-200 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">
-                Admin
-              </span>
-            )}
+            Logged in: <span className="text-[#007AFF]">👤 {isSessionReady ? loggedInUser : "Loading..."}</span>
           </div>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => window.location.href = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080") + "/api/kelolaan-mitra/export"}
-            className="px-4 py-2.5 bg-white border border-[#E5E5EA] rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm cursor-pointer"
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm cursor-pointer"
           >
-            📥 Export Excel
+            Public 📤 Export Excel
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
@@ -353,8 +327,8 @@ export default function KelolaanMitraPage() {
         </div>
       </div>
 
-      {/* FILTER SEARCH PANEL (TABS STATUS FILTER ALL DAN SISANYA SUDAH DIHAPUS RESMI) */}
-      <div className="bg-white p-4 rounded-2xl border border-[#E8E8ED] shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+      {/* FILTER SEARCH PANEL */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
             <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
@@ -365,10 +339,10 @@ export default function KelolaanMitraPage() {
             />
           </div>
 
-          {/* 👤 DROPDOWN FILTER PIC SALES UNTUK ADMIN */}
+          {/* DROPDOWN FILTER PIC SALES UNTUK ADMIN */}
           {isSessionReady && userRole.toLowerCase() === "admin" && (
             <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">👤 PIC Sales:</span>
+              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">👤 PIC:</span>
               <select
                 value={picFilterAdmin} onChange={(e) => setPicFilterAdmin(e.target.value)}
                 className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
@@ -381,89 +355,66 @@ export default function KelolaanMitraPage() {
             </div>
           )}
 
-          <div className="flex bg-[#F5F5F7] p-1 rounded-xl border border-[#E5E5EA]">
+          <div className="flex bg-[#F5F5F7] p-1 rounded-xl border border-gray-200">
             <button type="button" onClick={() => setModeFilter("harian")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "harian" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"}`}>Harian</button>
             <button type="button" onClick={() => setModeFilter("bulanan")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "bulanan" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"}`}>Bulanan</button>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-[#E5E5EA] w-full sm:w-auto">
+        <div className="flex items-center justify-end gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-gray-200 w-full sm:w-auto">
           <span className="text-[11px] font-bold text-gray-400 uppercase whitespace-nowrap px-1">
             {modeFilter === "harian" ? "Rekapan Tanggal:" : "Rekapan Bulan:"}
           </span>
           <input 
             type={modeFilter === "harian" ? "date" : "month"} value={modeFilter === "harian" ? tanggalFilter : bulanFilter}
             onChange={(e) => modeFilter === "harian" ? setTanggalFilter(e.target.value) : setBulanFilter(e.target.value)}
-            className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer uppercase"
+            className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer uppercase p-0.5"
           />
         </div>
       </div>
 
-      {/* CARDS GRID CONTAINER */}
-      {loading || !isSessionReady ? (
-        <div className="text-center py-24 font-bold text-sm text-gray-400 animate-pulse">Menghubungkan ke enkripsi crm...</div>
-      ) : filteredData.length === 0 ? (
-        <div className="bg-white rounded-[24px] border border-gray-200/80 shadow-[0_4px_12px_rgba(0,0,0,0.01)] flex flex-col items-center justify-center py-28 px-4 text-center min-h-[350px]">
-          <span className="text-4xl mb-4 select-none">📬</span>
-          <p className="text-[#8E8E93] font-bold text-sm tracking-tight max-w-md leading-relaxed">
-            Belum ada record follow up untuk {modeFilter === "harian" ? `tanggal ${tanggalFilter}` : `bulan ${bulanFilter}`}
-            {userRole.toLowerCase() === "admin" && picFilterAdmin !== "Semua" ? ` untuk PIC ${picFilterAdmin}` : ""}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredData.map((item: any, index: number) => (
-            <div 
-              key={index} onClick={() => handleOpenRowDetail(item)}
-              className="bg-white rounded-2xl border border-[#E8E8ED] hover:border-[#AEAEB2] p-5 flex flex-col justify-between relative overflow-hidden group shadow-sm hover:shadow-md transition duration-200 cursor-pointer"
-            >
-              <div className="absolute top-0 inset-x-0 h-1 bg-[#007AFF]" />
-              <div>
-                <div className="flex justify-between items-start gap-2">
-                  <div className="min-w-0">
-                    <span className="text-[9px] bg-blue-50 text-blue-600 border border-blue-100 px-2 py-0.5 rounded-md font-bold uppercase">No. {index + 1}</span>
-                    <h3 className="text-base font-black text-gray-900 tracking-tight mt-2 truncate">{item.brandUtama || "Tanpa Brand"}</h3>
-                  </div>
-                  <span className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border uppercase tracking-wider shrink-0 ${getStatusLanggananStyle(item.statusLangganan)}`}>
-                    {item.statusLangganan}
-                  </span>
-                </div>
-                <div className="mt-4 bg-[#F5F5F7] border border-gray-100 p-3 rounded-2xl space-y-1.5 text-xs font-semibold text-gray-500">
-                  <div className="flex justify-between items-center gap-1.5">
-                    <span className="truncate">Mitra Utama: <span className="text-gray-800 font-bold">{item.namaMitra}</span></span>
-                    <span>ID: <span className="text-gray-700 font-mono">[{item.kodeOwnerUtama || "-"}]</span></span>
-                  </div>
-                  <div className="flex items-center gap-1.5 pt-1 border-t border-gray-200/50">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase">PIC:</span>
-                    <span className="text-[10px] font-extrabold text-[#007AFF] bg-blue-50 border border-blue-100 px-2.5 py-0.5 rounded-lg">
-                      👤 {dapatkanNamaPanggilan(item.picNasabah)}
+      {/* DATA TABLE INTEGRATED */}
+      <div className="space-y-4">
+        {loading || !isSessionReady ? (
+          <div className="text-center py-24 font-bold text-sm text-gray-400 animate-pulse">Menghubungkan ke enkripsi crm...</div>
+        ) : filteredData.length === 0 ? (
+          <div className="text-center py-20 bg-white border border-dashed rounded-3xl text-gray-400 text-xs font-medium">
+            📭 Tidak ada data rekapan ditemukan.
+          </div>
+        ) : (
+          <div className="bg-white p-2 border border-gray-200/70 rounded-3xl shadow-sm">
+            <DataTable 
+              columns={[
+                { header: "Tanggal", accessor: "tanggalInput", render: (item: any) => formatTanggalIndo(item.tanggalInput?.substring(0, 10)) },
+                { header: "PIC Nasabah", accessor: "picNasabah", render: (item: any) => <span className="text-[#1C1C1E]">{dapatkanNamaPanggilan(item.picNasabah)}</span> }, 
+                { header: "Kode Owner", accessor: "kodeOwnerUtama", render: (item: any) => <span className="font-mono text-gray-400">#{item.kodeOwnerUtama || "-"}</span> },
+                { header: "Nama Mitra", accessor: "namaMitra" },
+                { header: "Brand Utama", accessor: "brandUtama", render: (item: any) => <span className="font-black text-gray-800">{item.brandUtama || "-"}</span> }, 
+                { 
+                  header: "Status Komisi", 
+                  accessor: "status_komisi", 
+                  render: (item: any) => (
+                    <span className={`text-[10px] font-black px-2 py-0.5 rounded border text-center ${item.status_komisi === "Selesai" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+                      {item.status_komisi === "Selesai" ? "Cair" : "Pending"}
                     </span>
-                  </div>
-                </div>
-              </div>
-              <div className="mt-4 p-3 bg-amber-50/30 border border-amber-200/50 rounded-2xl flex items-center justify-between text-xs">
-                <div>
-                  <span className="text-[9px] text-amber-800 block uppercase font-bold tracking-wider">Insentif Komisi</span>
-                  <span className="text-sm font-black text-amber-900 mt-0.5 block">{formatRupiah(item.nominal_komisi)}</span>
-                </div>
-                <span className={`text-[10px] font-black px-2.5 py-0.5 rounded-md border tracking-wide uppercase ${item.status_komisi === "Selesai" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-100 text-amber-800 border-amber-300"}`}>
-                  {item.status_komisi === "Selesai" ? "💰 Cair" : "⏳ Pending"}
-                </span>
-              </div>
-              <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold">
-                <div>
-                  <span className="text-[9px] font-bold text-gray-400 uppercase block">Paket Langganan</span>
-                  <span className="text-gray-700 font-black mt-0.5">{item.paketLangganan}</span>
-                </div>
-                <span className="text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-100">{item.kategoriMitra || "Referral"}</span>
-              </div>
-              <div className="mt-3 pt-2 border-t border-gray-50 text-[10px] text-gray-400 font-bold">
-                🗓️ Log Date: {formatTanggalIndo(item.tanggalInput?.substring(0, 10))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+                  ) 
+                },
+                { 
+                  header: "Status Langganan", 
+                  accessor: "statusLangganan", 
+                  render: (item: any) => (
+                    <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border uppercase text-center ${getStatusLanggananStyle(item.statusLangganan)}`}>
+                      {item.statusLangganan}
+                    </span>
+                  ) 
+                },
+              ]} 
+              initialData={filteredData} 
+              onRowClick={(item: any) => handleOpenRowDetail(item)} 
+            />
+          </div>
+        )}
+      </div>
 
       {/* FORM MODAL */}
       {isModalOpen && (
@@ -483,7 +434,7 @@ export default function KelolaanMitraPage() {
                   <input 
                     type="date" name="tanggalInput" value={selectedRecord && !isEditMode ? selectedRecord.tanggalInput?.substring(0, 10) : formInput.tanggalInput} 
                     onChange={handleInputChange} disabled={selectedRecord && !isEditMode}
-                    className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold text-gray-800 bg-white disabled:bg-gray-100/70 focus:outline-none uppercase cursor-pointer" required 
+                    className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold text-gray-800 bg-white disabled:bg-[#F5F5F7] focus:outline-none uppercase cursor-pointer" required 
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
@@ -521,7 +472,7 @@ export default function KelolaanMitraPage() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-gray-600">Kategori Kemitraan</label>
+                  <label>Kategori Kemitraan</label>
                   {selectedRecord && !isEditMode ? (
                     <input type="text" value={selectedRecord.kategoriMitra} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-gray-100/70 text-gray-500" />
                   ) : (
@@ -532,7 +483,7 @@ export default function KelolaanMitraPage() {
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-gray-600">Paket Langganan</label>
+                  <label>Paket Langganan</label>
                   {selectedRecord && !isEditMode ? (
                     <input type="text" value={selectedRecord.paketLangganan} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-gray-100/70 text-gray-500" />
                   ) : (
@@ -545,7 +496,7 @@ export default function KelolaanMitraPage() {
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-gray-600">Status Langganan</label>
+                  <label>Status Langganan</label>
                   {selectedRecord && !isEditMode ? (
                     <input type="text" value={selectedRecord.statusLangganan} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-gray-100/70 text-gray-500" />
                   ) : (
@@ -569,11 +520,11 @@ export default function KelolaanMitraPage() {
                   <div className="flex flex-col gap-1.5">
                     <label className="text-amber-900">Status Pencairan Komisi</label>
                     {selectedRecord && !isEditMode ? (
-                      <input type="text" value={selectedRecord.status_komisi === "Selesai" ? "💰 Cair" : "⏳ Pending"} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-gray-100/70 text-gray-500" />
+                      <input type="text" value={selectedRecord.status_komisi === "Selesai" ? "Cair" : "Pending"} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-gray-100/70 text-gray-500" />
                     ) : (
                       <select name="status_komisi" value={formInput.status_komisi} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-white text-gray-800 focus:outline-none">
-                        <option value="Pending">⏳ Pending (Ditahan)</option>
-                        <option value="Selesai">💰 Selesai (Sudah Cair)</option>
+                        <option value="Pending">Pending (Ditahan)</option>
+                        <option value="Selesai">Selesai (Sudah Cair)</option>
                       </select>
                     )}
                   </div>
