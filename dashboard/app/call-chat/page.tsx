@@ -113,9 +113,9 @@ export default function CallChatPage() {
       }
     } catch (error) {
       console.error("Gagal memuat data monitoring call & chat:", error);
+      setData([]); 
     } finally {
-      setData([]); // Fallback data prevent lag
-      setLoading(false);
+      setLoading(false); 
     }
   };
 
@@ -143,7 +143,7 @@ export default function CallChatPage() {
       tanggalFu: formInput.tanggalFu || getTodayString(),
       bulan: formInput.bulan || "-",
       tanggalDibagikan: formInput.tanggalDibagikan || getTodayString(),
-      statusAkun: formInput.statusAcnt || "Akun Baru", 
+      statusAkun: formInput.statusAcnt, 
       pic: dapatkanNamaPanggilan(formInput.pic), 
       kodeBaris: formInput.kodeBaris ? String(formInput.kodeBaris) : "0",
       kodeOwner: formInput.kodeOwner ? String(formInput.kodeOwner) : "-",
@@ -228,7 +228,6 @@ export default function CallChatPage() {
     });
   };
 
-  // Fitur Ekspor Client-Side Excel (.xlsx) Sinkron Filter
   const handleExportExcel = async () => {
     if (filteredData.length === 0) {
       alert("Tidak ada data log follow-up terfilter yang tersedia untuk diekspor pada periode ini.");
@@ -249,7 +248,7 @@ export default function CallChatPage() {
         "No Handphone Owner": item.hpOwner || "-",
         "Kode Owner": item.kodeOwner || "-",
         "Kode Baris": item.kodeBaris || "-",
-        "Status Akun": item.statusAkun === "Akun Baru" || String(item.statusAkun).toLowerCase().includes("baru") ? "Akun Baru" : item.statusAkun
+        "Status Akun": item.statusAkun
       }));
 
       const wb = XLSX.utils.book_new();
@@ -331,7 +330,6 @@ export default function CallChatPage() {
             Manajemen riwayat monitoring aktivitas follow-up call & chat whatsapp internal PT PIPOSMART DIGITAL INDONESIA.
           </p>
           <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1.5">
-            {/* 🌟 UPDATE ICON: Menggunakan SVG minimalis warna biru untuk User PIC */}
             <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
@@ -343,7 +341,6 @@ export default function CallChatPage() {
             onClick={handleExportExcel}
             className="px-4 py-2.5 bg-white border border-gray-200 font-bold text-gray-600 rounded-xl text-xs hover:bg-gray-50 shadow-sm transition cursor-pointer flex items-center gap-1.5"
           >
-            {/* 🌟 UPDATE ICON: SVG Download Dokumen */}
             <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
             </svg>
@@ -353,7 +350,6 @@ export default function CallChatPage() {
             onClick={() => { resetForm(); setIsModalOpen(true); }}
             className="px-5 py-2.5 bg-[#007AFF] text-white font-bold rounded-xl text-xs hover:bg-blue-600 shadow-md transition cursor-pointer flex items-center gap-1.5"
           >
-            {/* 🌟 UPDATE ICON: SVG Plus */}
             <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
@@ -366,7 +362,6 @@ export default function CallChatPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm">
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
-            {/* 🌟 UPDATE ICON: SVG Kaca Pembesar (Search) warna abu-abu tipis */}
             <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
               <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -381,7 +376,6 @@ export default function CallChatPage() {
 
           {isSessionReady && userRole.toLowerCase() === "admin" && (
             <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-              {/* 🌟 UPDATE ICON: SVG User untuk penanda dropdown Admin */}
               <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
@@ -406,7 +400,6 @@ export default function CallChatPage() {
         
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
           <div className="flex items-center gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-gray-200">
-            {/* 🌟 UPDATE ICON: SVG Kalender untuk bagian input filter range */}
             <svg className="w-3.5 h-3.5 text-gray-500 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
             </svg>
@@ -436,13 +429,14 @@ export default function CallChatPage() {
                 { header: "Project / Brand", accessor: "brand", render: (item: any) => <span className="font-black text-gray-800">{item.brand || "-"}</span> }, 
                 { header: "Nama Owner", accessor: "namaOwner" },
                 { header: "No. HP Mitra", accessor: "hpOwner", render: (item: any) => <span className="font-mono">{item.hpOwner || "-"}</span> },
-                { header: "Status", accessor: "statusAkun", render: (item: any) => (
+                { /* 🛠️ PERBAIKAN: Menghapus filter includes("baru") agar tulisan sesuai data asli */
+                  header: "Status", accessor: "statusAkun", render: (item: any) => (
                     <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-md border text-center ${
                       item.statusAkun === "Outlet Baru" ? "bg-amber-50 text-amber-700 border-amber-200" :
                       item.statusAkun === "Referral Mitra" ? "bg-purple-50 text-purple-700 border-purple-200" :
                       "bg-sky-50 text-sky-700 border-sky-200" 
                     }`}>
-                      {item.statusAkun === "Akun Baru" || String(item.statusAkun).toLowerCase().includes("baru") ? "Akun Baru" : item.statusAkun}
+                      {item.statusAkun || "-"}
                     </span>
                   ) 
                 },
@@ -485,7 +479,7 @@ export default function CallChatPage() {
                 <div className="flex flex-col gap-1">
                   <label>STATUS AKUN</label>
                   {selectedRecord && !isEditMode ? (
-                    <input type="text" value={selectedRecord.statusAkun === "Akun Baru" || String(selectedRecord.statusAkun).toLowerCase().includes("baru") ? "Akun Baru" : selectedRecord.statusAkun} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-[#F5F5F7] text-gray-500" />
+                    <input type="text" value={selectedRecord.statusAkun} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-[#F5F5F7] text-gray-500" />
                   ) : (
                     <select name="statusAcnt" value={formInput.statusAcnt} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none cursor-pointer">
                       <option value="Akun Baru">Akun Baru</option>
