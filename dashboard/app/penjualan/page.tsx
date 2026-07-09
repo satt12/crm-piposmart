@@ -1,11 +1,12 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import DataTable from "../components/DataTable";
 
 export default function PenjualanHarianPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -20,11 +21,11 @@ export default function PenjualanHarianPage() {
     return namaLengkap.split(" ")[0];
   };
 
-  // 🌟 STATE USER SESSION: Menyimpan nama akun dan role browser pasca-mounted
+  // STATE USER SESSION
   const [loggedInUser, setLoggedInUser] = useState("Satria");
   const [userRole, setUserRole] = useState("Sales");
 
-  // 🌟 STATE FILTER PIC KHUSUS ADMIN: "Semua" = tampilkan semua PIC
+  // STATE FILTER PIC KHUSUS ADMIN
   const [picFilterAdmin, setPicFilterAdmin] = useState("Semua");
 
   // State Mode Filter: "harian" atau "bulanan"
@@ -42,9 +43,52 @@ export default function PenjualanHarianPage() {
   };
 
   const [tanggalFilter, setTanggalFilter] = useState(getTodayString());
-  const [bulanFilter, setBulanFilter] = useState(getTargetMonthString()); // State Filter Bulanan
+  const [bulanAwalFilter, setBulanAwalFilter] = useState(getTargetMonthString());
+  const [bulanAkhirFilter, setBulanAkhirFilter] = useState(getTargetMonthString());
 
-  // 🌟 AMAN SSR: Memuat data localStorage hanya setelah masuk siklus client-side
+  // 🌟 UPDATE UTAMA: Memulihkan ingatan parameter tanggal/bulan secara utuh agar tidak kosong saat kembali
+  useEffect(() => {
+    const filterTerbawa = searchParams.get("filter");
+    const tglTerbawa = searchParams.get("tgl");
+    const blnAwalTerbawa = searchParams.get("blnAwal");
+    const blnAkhirTerbawa = searchParams.get("blnAkhir");
+
+    if (filterTerbawa === "bulanan") {
+      setModeFilter("bulanan");
+      if (blnAwalTerbawa) setBulanAwalFilter(blnAwalTerbawa);
+      if (blnAkhirTerbawa) setBulanAkhirFilter(blnAkhirTerbawa);
+    } else if (filterTerbawa === "harian") {
+      setModeFilter("harian");
+      if (tglTerbawa) setTanggalFilter(tglTerbawa);
+    }
+  }, [searchParams]);
+
+  // UTILITY FUNCTION: Memformat Tanggal & Waktu Input secara presisi (DD MMMM YYYY • HH:mm WIB)
+  const formatTanggalWaktuLengkap = (tanggalMentah: string, createdAtMentah?: string) => {
+    const targetWaktu = createdAtMentah || tanggalMentah;
+    if (!targetWaktu) return "-";
+
+    try {
+      const dateObj = new Date(targetWaktu);
+      if (isNaN(dateObj.getTime())) return tanggalMentah;
+
+      const opsiTanggal: Intl.DateTimeFormatOptions = { day: "2-digit", month: "long", year: "numeric" };
+      const tanggalFormat = new Intl.DateTimeFormat("id-ID", opsiTanggal).format(dateObj);
+
+      const opsiWaktu: Intl.DateTimeFormatOptions = { hour: "2-digit", minute: "2-digit", hour12: false };
+      const waktuFormat = new Intl.DateTimeFormat("id-ID", opsiWaktu).format(dateObj);
+
+      if (targetWaktu.length <= 10 && !createdAtMentah) {
+        return tanggalFormat;
+      }
+
+      return `${tanggalFormat} • ${waktuFormat} WIB`;
+    } catch (e) {
+      return tanggalMentah;
+    }
+  };
+
+  // AMAN SSR: Memuat data session
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedPic = localStorage.getItem("user_pic");
@@ -79,7 +123,7 @@ export default function PenjualanHarianPage() {
     fetchPenjualan();
   }, []);
 
-  // 🌟 DAFTAR PIC UNIK DARI DATA YANG ADA (untuk isi pilihan dropdown filter Admin)
+  // DAFTAR PIC UNIK
   const daftarPicUnik = useMemo(() => {
     const setPic = new Set<string>();
     data.forEach((item: any) => {
@@ -121,12 +165,13 @@ export default function PenjualanHarianPage() {
     }
   };
 
+  // 🌟 UPDATE FUNGSI: Mengoper semua parameter filter aktif ke form agar tidak ter-reset
   const handleOpenRowDetail = (item: any) => {
     const id = item.id || item.ID;
-    router.push(`/penjualan/form?mode=edit&id=${id}`);
+    router.push(`/penjualan/form?mode=edit&id=${id}&source=${modeFilter}&tgl=${tanggalFilter}&blnAwal=${bulanAwalFilter}&blnAkhir=${bulanAkhirFilter}`);
   };
 
-  // 🔍 🌟 LOGIKA UTAMA SINKRONISASI HAK AKSES DATA FILTER
+  // LOGIKA UTAMA FILTER DATA
   const filteredData = data.filter((item: any) => {
     const itemPicPanggilan = dapatkanNamaPanggilan(item.pic_team || "");
 
@@ -136,9 +181,6 @@ export default function PenjualanHarianPage() {
       itemPicPanggilan.toLowerCase().includes(searchTerm.toLowerCase()) || 
       item.target_paket?.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // 🌟 KUNCI ROLE KETAT:
-    // - Admin: bisa lihat semua PIC, atau pilih PIC tertentu lewat dropdown filter
-    // - Sales: dipaksa hanya menampilkan data pribadi miliknya sendiri (tidak bisa lihat punya orang lain)
     const matchesRoleAkses = userRole === "Admin"
       ? (picFilterAdmin === "Semua" || itemPicPanggilan.toLowerCase() === picFilterAdmin.toLowerCase())
       : itemPicPanggilan.toLowerCase() === loggedInUser.toLowerCase();
@@ -150,11 +192,59 @@ export default function PenjualanHarianPage() {
       matchesTanggal = dataDateStr === tanggalFilter;
     } else {
       const dataMonthStr = item.tanggal ? item.tanggal.substring(0, 7) : "";
-      matchesTanggal = dataMonthStr === bulanFilter;
+      matchesTanggal = dataMonthStr >= bulanAwalFilter && dataMonthStr <= bulanAkhirFilter;
     }
     
     return matchesSearch && matchesRoleAkses && matchesTanggal;
   });
+
+  // FITUR EKSPOR EXCEL SINKRONISASI RENTANG WAKTU
+  const handleExportExcel = async () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data tabel yang tersedia untuk diekspor pada filter periode ini.");
+      return;
+    }
+
+    try {
+      const XLSX = await import("xlsx");
+
+      const dataToExport = filteredData.map((item: any) => ({
+        "Waktu & Tanggal Input": formatTanggalWaktuLengkap(item.tanggal, item.created_at || item.createdAt),
+        "PIC Team": dapatkanNamaPanggilan(item.pic_team),
+        "Brand Usaha": item.nama_brand || "-",
+        "Nama Owner": item.nama_owner || "-",
+        "No Handphone": item.no_hp || item.whatsapp || "-",
+        "Target Skema Paket": item.target_paket || "-",
+        "Harga Satuan": item.harga_satuan || 0,
+        "Jumlah Nasabah": item.jumlah_nasabah || 0,
+        "Total Omset Penjualan": item.total_penjualan || 0,
+        "Tenor": item.tenor || "-",
+        "Status Pipeline": item.status || "-"
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      ws["!cols"] = [
+        { wch: 25 }, { wch: 15 }, { wch: 25 }, { wch: 22 }, { wch: 18 }, { wch: 25 }, { wch: 16 }, { wch: 15 }, { wch: 22 }, { wch: 12 }, { wch: 18 }
+      ];
+
+      const namaSheet = modeFilter === "harian" 
+        ? `Harian ${tanggalFilter}` 
+        : `Range ${bulanAwalFilter} sd ${bulanAkhirFilter}`;
+      XLSX.utils.book_append_sheet(wb, ws, namaSheet.substring(0, 31));
+
+      const namaFile = modeFilter === "harian"
+        ? `Data_Penjualan_Piposmart_Harian_${tanggalFilter}.xlsx`
+        : `Data_Penjualan_Piposmart_Rentang_Bulan_${bulanAwalFilter}_ke_${bulanAkhirFilter}.xlsx`;
+
+      XLSX.writeFile(wb, namaFile);
+
+    } catch (error) {
+      console.error("Gagal mengekspor data:", error);
+      alert("Terjadi kesalahan saat memproses ekspor berkas Excel.");
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-7 p-6 bg-[#FAF9F6] min-h-screen font-sans text-[#1C1C1E]">
@@ -177,13 +267,14 @@ export default function PenjualanHarianPage() {
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => window.location.href = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080") + "/api/pipo/penjualan/export"}
-            className="px-4 py-2.5 bg-white border border-gray-200 rounded-2xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm transition cursor-pointer"
+            onClick={handleExportExcel}
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-2xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm transition cursor-pointer flex items-center gap-1"
           >
             📥 Export Excel
           </button>
+          {/* 🌟 UPDATE: Menyertakan parameter filter aktif saat klik tombol Tambah Baru */}
           <button 
-            onClick={() => router.push("/penjualan/form?mode=create")}
+            onClick={() => router.push(`/penjualan/form?mode=create&source=${modeFilter}&tgl=${tanggalFilter}&blnAwal=${bulanAwalFilter}&blnAkhir=${bulanAkhirFilter}`)}
             className="px-5 py-2.5 bg-[#007AFF] text-white rounded-xl font-bold text-xs shadow-md hover:bg-[#0062CC] transition flex items-center gap-2 cursor-pointer"
           >
             <span>➕</span> Record Penjualan Baru
@@ -191,7 +282,7 @@ export default function PenjualanHarianPage() {
         </div>
       </div>
 
-      {/* FILTER SEARCH PANEL WITH MONTH MODE */}
+      {/* FILTER SEARCH PANEL */}
       <div className="bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-wrap">
           
@@ -207,16 +298,16 @@ export default function PenjualanHarianPage() {
             />
           </div>
 
-          {/* 🌟 FILTER PIC — HANYA TAMPIL UNTUK ADMIN */}
+          {/* FILTER PIC — HANYA TAMPIL UNTUK ADMIN */}
           {userRole === "Admin" && (
             <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
               <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">
-                👤 PIC Sales:
+                👤 PIC:
               </span>
               <select
                 value={picFilterAdmin}
                 onChange={(e) => setPicFilterAdmin(e.target.value)}
-                className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer animate-none"
               >
                 <option value="Semua">Semua PIC</option>
                 {daftarPicUnik.map((pic) => (
@@ -226,39 +317,59 @@ export default function PenjualanHarianPage() {
             </div>
           )}
 
-          {/* TOGGLE TAB MODE FILTER */}
-          <div className="flex bg-gray-100 p-1 rounded-xl border w-full sm:w-auto">
-            <button
-              type="button"
-              onClick={() => setModeFilter("harian")}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                modeFilter === "harian" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"
-              }`}
-            >
-              Harian
-            </button>
-            <button
-              type="button"
-              onClick={() => setModeFilter("bulanan")}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${
-                modeFilter === "bulanan" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"
-              }`}
-            >
-              Bulanan
-            </button>
-          </div>
+          {/* SUSUNAN LAYOUT TOGGLE FILTER TANGGAL */}
+          <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl border border-gray-200/80 w-full sm:w-auto flex-wrap">
+            <div className="flex bg-gray-200/70 p-0.5 rounded-lg border">
+              <button
+                type="button"
+                onClick={() => setModeFilter("harian")}
+                className={`px-3 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                  modeFilter === "harian" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"
+                }`}
+              >
+                Harian
+              </button>
+              <button
+                type="button"
+                onClick={() => setModeFilter("bulanan")}
+                className={`px-3 py-1 rounded-md text-[11px] font-bold transition cursor-pointer ${
+                  modeFilter === "bulanan" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"
+                }`}
+              >
+                Bulanan
+              </button>
+            </div>
 
-          {/* INPUT DATE/MONTH CONTROLLER */}
-          <div className="flex items-center gap-2 bg-gray-50 border border-gray-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-            <span className="text-[11px] font-bold text-gray-400 uppercase whitespace-nowrap">
-              {modeFilter === "harian" ? "Rekapan Tanggal:" : "Rekapan Bulan:"}
-            </span>
-            <input 
-              type={modeFilter === "harian" ? "date" : "month"}
-              value={modeFilter === "harian" ? tanggalFilter : bulanFilter}
-              onChange={(e) => modeFilter === "harian" ? setTanggalFilter(e.target.value) : setBulanFilter(e.target.value)}
-              className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer uppercase"
-            />
+            <div className="flex items-center gap-2 px-1 text-gray-600 font-bold text-[11px]">
+              {modeFilter === "harian" ? (
+                <>
+                  <span className="text-gray-400 font-black uppercase text-[10px]">Tanggal:</span>
+                  <input 
+                    type="date"
+                    value={tanggalFilter}
+                    onChange={(e) => setTanggalFilter(e.target.value)}
+                    className="bg-white border rounded-lg px-2 py-0.5 text-xs text-gray-700 focus:outline-none cursor-pointer uppercase"
+                  />
+                </>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="text-gray-400 font-black uppercase text-[10px]">Dari:</span>
+                  <input 
+                    type="month"
+                    value={bulanAwalFilter}
+                    onChange={(e) => setBulanAwalFilter(e.target.value)}
+                    className="bg-white border rounded-lg px-2 py-0.5 text-xs text-gray-700 focus:outline-none cursor-pointer"
+                  />
+                  <span className="text-gray-400 font-black uppercase text-[10px]">S/D:</span>
+                  <input 
+                    type="month"
+                    value={bulanAkhirFilter}
+                    onChange={(e) => setBulanAkhirFilter(e.target.value)}
+                    className="bg-white border rounded-lg px-2 py-0.5 text-xs text-gray-700 focus:outline-none cursor-pointer"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
         </div>
@@ -270,15 +381,23 @@ export default function PenjualanHarianPage() {
           <div className="text-center py-20 font-bold text-sm text-gray-400 animate-pulse">Menghubungkan ke tabel penjualan...</div>
         ) : filteredData.length === 0 ? (
           <div className="text-center py-20 bg-white border border-dashed rounded-3xl text-gray-400 text-xs font-medium">
-            📭 Tidak ada data rekapan penjualan/pipeline pada {modeFilter === "harian" ? `tanggal ${formatTanggalIndo(tanggalFilter)}` : `bulan ${formatBulanIndo(bulanFilter)}`}
+            📭 Tidak ada data rekapan penjualan/pipeline pada {modeFilter === "harian" ? `tanggal ${formatTanggalIndo(tanggalFilter)}` : `rentang periode ${formatBulanIndo(bulanAwalFilter)} s/d ${formatBulanIndo(bulanAkhirFilter)}`}
             {userRole === "Admin" && picFilterAdmin !== "Semua" ? ` untuk PIC ${picFilterAdmin}` : ""}.
-            <p className="text-[11px] text-gray-400 mt-1">Jika Anda merasa sudah menginput data, silakan ubah filter tanggal/bulan di atas ke periode data tersebut diinput.</p>
+            <p className="text-[11px] text-gray-400 mt-1">Jika Anda merasa sudah menginput data, silakan ubah rentang tanggal/bulan di atas.</p>
           </div>
         ) : (
           <div className="bg-white p-2 border border-gray-200/70 rounded-3xl shadow-sm">
             <DataTable 
               columns={[
-                { header: "Tanggal Input", accessor: "tanggal", render: (item: any) => formatTanggalIndo(item.tanggal?.substring(0, 10)) },
+                { 
+                  header: "Waktu & Tanggal Input", 
+                  accessor: "tanggal", 
+                  render: (item: any) => (
+                    <span className="text-gray-900 font-bold">
+                      ⏱️ {formatTanggalWaktuLengkap(item.tanggal, item.created_at || item.createdAt)}
+                    </span>
+                  )
+                },
                 { header: "PIC Team", accessor: "pic_team", render: (item: any) => dapatkanNamaPanggilan(item.pic_team) },
                 { header: "Brand Usaha", accessor: "nama_brand", render: (item: any) => <span className="font-bold text-gray-800">{item.nama_brand || "-"}</span> },
                 { header: "Nama Owner", accessor: "nama_owner" },

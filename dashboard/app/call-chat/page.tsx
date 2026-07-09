@@ -114,6 +114,7 @@ export default function CallChatPage() {
     } catch (error) {
       console.error("Gagal memuat data monitoring call & chat:", error);
     } finally {
+      setData([]); // Fallback data prevent lag
       setLoading(false);
     }
   };
@@ -138,7 +139,6 @@ export default function CallChatPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 🌟 BE VALIDATOR FIX: Menyuntikkan nilai default "-" / "0" agar lolos pengecekan 'required' Backend
     const payload = {
       tanggalFu: formInput.tanggalFu || getTodayString(),
       bulan: formInput.bulan || "-",
@@ -174,7 +174,6 @@ export default function CallChatPage() {
         resetForm();
         fetchCallChat(); 
       } else {
-        // 🌟 ERROR CATCH FIX: Memastikan error dari backend dibaca dan ditampilkan ke Pop-Up 
         const result = await response.json().catch(() => ({}));
         alert(`Gagal Menyimpan: ${result.message || result.error || "Validasi backend menolak data kosong."}`);
       }
@@ -229,6 +228,52 @@ export default function CallChatPage() {
     });
   };
 
+  // Fitur Ekspor Client-Side Excel (.xlsx) Sinkron Filter
+  const handleExportExcel = async () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data log follow-up terfilter yang tersedia untuk diekspor pada periode ini.");
+      return;
+    }
+
+    try {
+      const XLSX = await import("xlsx");
+
+      const dataToExport = filteredData.map((item: any) => ({
+        "Tanggal FU": formatTanggalIndo(item.tanggalFu?.substring(0, 10)),
+        "Bulan Berjalan": item.bulan || "-",
+        "Tanggal Dibagikan": formatTanggalIndo(item.tanggalDibagikan?.substring(0, 10)),
+        "Pic Team Hunter": dapatkanNamaPanggilan(item.pic),
+        "Project / Brand": item.brand || "-",
+        "Cabang Outlet": item.outlet || "-",
+        "Nama Owner": item.namaOwner || "-",
+        "No Handphone Owner": item.hpOwner || "-",
+        "Kode Owner": item.kodeOwner || "-",
+        "Kode Baris": item.kodeBaris || "-",
+        "Status Akun": item.statusAkun === "Akun Baru" || String(item.statusAkun).toLowerCase().includes("baru") ? "Akun Baru" : item.statusAkun
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      ws["!cols"] = [
+        { wch: 15 }, { wch: 15 }, { wch: 18 }, { wch: 18 }, { wch: 25 }, { wch: 22 }, { wch: 22 }, { wch: 18 }, { wch: 12 }, { wch: 12 }, { wch: 16 }
+      ];
+
+      const namaTab = modeFilter === "harian" ? `FollowUp Hari ${filterDate}` : `FollowUp Bulan ${filterMonth}`;
+      XLSX.utils.book_append_sheet(wb, ws, namaTab.substring(0, 31));
+
+      const namaFile = modeFilter === "harian"
+        ? `Log_FollowUp_Piposmart_Harian_${filterDate}.xlsx`
+        : `Log_FollowUp_Piposmart_Bulanan_${filterMonth}.xlsx`;
+
+      XLSX.writeFile(wb, namaFile);
+
+    } catch (error) {
+      console.error("Gagal memproses berkas excel:", error);
+      alert("Terjadi kegagalan teknis saat memproses ekspor Excel.");
+    }
+  };
+
   const resetForm = () => {
     setSelectedRecord(null);
     setIsEditMode(false);
@@ -281,26 +326,38 @@ export default function CallChatPage() {
       {/* HEADER BAR */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between bg-white rounded-2xl p-6 border border-gray-200 shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">Tele-Marketing Matrix</h1>
+          <h1 className="text-2xl font-black tracking-tight">Call & Chat Follow-Up</h1>
           <p className="text-xs text-gray-500 mt-0.5 font-medium">
-            Manajemen riwayat monitoring tele-marketing internal PT PIPOSMART DIGITAL INDONESIA.
+            Manajemen riwayat monitoring aktivitas follow-up call & chat whatsapp internal PT PIPOSMART DIGITAL INDONESIA.
           </p>
-          <div className="text-xs text-gray-400 font-bold mt-1">
-            Logged in: <span className="text-[#007AFF]">👤 {isSessionReady ? loggedInUser : "Loading..."} ({userRole})</span>
+          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1.5">
+            {/* 🌟 UPDATE ICON: Menggunakan SVG minimalis warna biru untuk User PIC */}
+            <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Logged in: <span className="text-[#007AFF] font-black">{isSessionReady ? loggedInUser : "Loading..."} ({userRole})</span>
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => window.location.href = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080") + "/api/callchat/export"}
-            className="px-4 py-2.5 bg-white border border-gray-200 font-bold text-gray-600 rounded-xl text-xs hover:bg-gray-50 shadow-sm transition cursor-pointer"
+            onClick={handleExportExcel}
+            className="px-4 py-2.5 bg-white border border-gray-200 font-bold text-gray-600 rounded-xl text-xs hover:bg-gray-50 shadow-sm transition cursor-pointer flex items-center gap-1.5"
           >
-            Public 📤 Export Excel
+            {/* 🌟 UPDATE ICON: SVG Download Dokumen */}
+            <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export Excel
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="px-5 py-2.5 bg-[#007AFF] text-white font-bold rounded-xl text-xs hover:bg-blue-600 shadow-md transition cursor-pointer"
+            className="px-5 py-2.5 bg-[#007AFF] text-white font-bold rounded-xl text-xs hover:bg-blue-600 shadow-md transition cursor-pointer flex items-center gap-1.5"
           >
-            <span>➕</span> Log Riwayat Baru
+            {/* 🌟 UPDATE ICON: SVG Plus */}
+            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Log Riwayat Baru
           </button>
         </div>
       </div>
@@ -309,7 +366,12 @@ export default function CallChatPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm">
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
-            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+            {/* 🌟 UPDATE ICON: SVG Kaca Pembesar (Search) warna abu-abu tipis */}
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input 
               type="text" placeholder="Cari Brand, Owner, atau PIC..." value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -319,7 +381,11 @@ export default function CallChatPage() {
 
           {isSessionReady && userRole.toLowerCase() === "admin" && (
             <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">👤 PIC:</span>
+              {/* 🌟 UPDATE ICON: SVG User untuk penanda dropdown Admin */}
+              <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">PIC:</span>
               <select
                 value={picFilterAdmin} onChange={(e) => setPicFilterAdmin(e.target.value)}
                 className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
@@ -340,6 +406,10 @@ export default function CallChatPage() {
         
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
           <div className="flex items-center gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-gray-200">
+            {/* 🌟 UPDATE ICON: SVG Kalender untuk bagian input filter range */}
+            <svg className="w-3.5 h-3.5 text-gray-500 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
             <input 
               type={modeFilter === "harian" ? "date" : "month"} value={modeFilter === "harian" ? filterDate : filterMonth}
               onChange={(e) => modeFilter === "harian" ? setFilterDate(e.target.value) : setFilterMonth(e.target.value)}
@@ -349,7 +419,7 @@ export default function CallChatPage() {
         </div>
       </div>
 
-      {/* DATA TABLE INTEGRATED (MINIMALIS) */}
+      {/* DATA TABLE INTEGRATED */}
       <div className="space-y-4">
         {loading || !isSessionReady ? (
           <div className="text-center py-24 text-sm text-gray-400 font-bold animate-pulse">Menghubungkan ke tabel call & chat...</div>

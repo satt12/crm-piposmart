@@ -43,7 +43,6 @@ const DATA_PACKET_MASTER: Record<string, SkemaHarga[]> = {
   ]
 };
 
-// 🌟 SINKRON: Daftar PIC CRM Resmi
 const DAFTAR_PIC = ["Satria Ramadhan", "Lidya Marpaung", "Laura"];
 
 function FormPenjualanPotensiContent() {
@@ -72,7 +71,7 @@ function FormPenjualanPotensiContent() {
   const [formInput, setFormInput] = useState({
     tanggalInput: getTodayString(),
     sumberData: "Kelolaan",
-    picNasabah: getLoggedInUser(), // 🌟 DINAMIS: Langsung membaca profil login akun browser          
+    picNasabah: getLoggedInUser(),          
     kodeOwner: "",
     namaOwner: "",
     brand: "",
@@ -91,7 +90,23 @@ function FormPenjualanPotensiContent() {
     buktiTransfer: ""
   });
 
-  // Sinkronisasi ulang jika user membuka form record baru agar data PIC tidak tertinggal cache lama
+  // 🌟 HELPER MANDIRI: Mengubah angka murni menjadi format titik ribuan lokal Indonesia
+  const formatRibuanIndo = (nilai: number | string) => {
+    if (nilai === undefined || nilai === null || nilai === "") return "";
+    const angkaMurni = String(nilai).replace(/\D/g, "");
+    if (!angkaMurni) return "";
+    return new Intl.NumberFormat("id-ID").format(Number(angkaMurni));
+  };
+
+  // 🌟 HELPER MANDIRI: Format visual di form katalog input non-aktif (Read Only)
+  const formatRupiahKatalog = (value: number) => {
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      maximumFractionDigits: 0,
+    }).format(value || 0);
+  };
+
   useEffect(() => {
     if (mode === "create") {
       setFormInput(prev => ({ ...prev, picNasabah: getLoggedInUser() }));
@@ -194,8 +209,10 @@ function FormPenjualanPotensiContent() {
         }
       }
 
+      // 🌟 INTERCEPTOR RUPIAH: Membersihkan string bertitik ke angka integer murni sebelum disimpan ke State
       if (name === "nominalHargaDeal") {
-        nextForm[name] = value === "" ? 0 : Number(value);
+        const angkaBersih = value.replace(/\D/g, "");
+        nextForm[name] = angkaBersih === "" ? 0 : Number(angkaBersih);
       }
 
       return nextForm;
@@ -246,7 +263,7 @@ function FormPenjualanPotensiContent() {
         membership: formInput.membership,
         targetPaket: namaPaketFinal,      
         targetNominal: targetNominalStandar, 
-        nominalAktual: formInput.nominalHargaDeal, 
+        nominalAktual: Number(formInput.nominalHargaDeal) || 0, // Aman terkirim sebagai integer number bersih ke backend Go
         tanggalTraining: formInput.tanggalTraining,
         statusTraining: formInput.statusTraining,
         tanggalRealisasi: formInput.tanggalRealisasi,
@@ -313,7 +330,6 @@ function FormPenjualanPotensiContent() {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            {/* 🌟 Terkunci otomatis (Read-Only) mengikuti akun yang sedang login */}
             <label className="text-gray-600">PIC Team Hunter</label>
             <input 
               type="text" 
@@ -395,8 +411,8 @@ function FormPenjualanPotensiContent() {
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-500">Harga Tetap (Standar Katalog)</label>
               <input 
-                type="number" 
-                value={hargaTetap} 
+                type="text" 
+                value={formatRupiahKatalog(hargaTetap)} 
                 disabled 
                 className="border p-3.5 rounded-2xl text-base font-black bg-gray-100 border-gray-200 text-gray-500 cursor-not-allowed focus:outline-none" 
               />
@@ -408,7 +424,7 @@ function FormPenjualanPotensiContent() {
               ⚡ Paket Aktual (Deal Lapangan)
             </span>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[#007AFF]">Kategori Paket</label>
+              <label className="text-blue-2003 select-none text-[#007AFF]">Kategori Paket</label>
               <select name="paketKategoriAktual" value={formInput.paketKategoriAktual} onChange={handleInputChange} className="border-2 border-blue-200 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none">
                 <option value="Basic">Basic</option>
                 <option value="Business">Business</option>
@@ -426,10 +442,12 @@ function FormPenjualanPotensiContent() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-[#007AFF]">Nominal Aktual Realisasi (Rp)</label>
+              {/* 🌟 DIUBAH MENJADI TYPE="TEXT" DENGAN FORMAT MASKING TITIK INDONESIA LOKAL */}
               <input 
-                type="number" 
+                type="text" 
                 name="nominalHargaDeal" 
-                value={formInput.nominalHargaDeal || ""} 
+                placeholder="Contoh: 1.500.000"
+                value={formatRibuanIndo(formInput.nominalHargaDeal)} 
                 onChange={handleInputChange} 
                 className="border-2 p-3.5 rounded-2xl text-base font-black bg-white border-blue-200 text-[#007AFF] focus:outline-none focus:border-blue-400" 
                 required
@@ -498,11 +516,6 @@ function FormPenjualanPotensiContent() {
     </div>
   );
 }
-
-// Parent rendering context with fallback
-type SuspenseProps = {
-  children?: React.ReactNode;
-};
 
 export default function FormPenjualanPage() {
   return (

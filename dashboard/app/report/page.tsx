@@ -70,7 +70,6 @@ export default function ReportPage() {
       if (savedRole) {
         setUserRole(savedRole);
       } else {
-        // 🔒 KONSISTENSI UTENTIKASI: Satria & Boby otomatis memegang kekuasaan Admin
         const namaBersih = panggilan.toLowerCase();
         setUserRole(namaBersih === "satria" || namaBersih === "boby" ? "Admin" : "Sales");
       }
@@ -204,12 +203,6 @@ export default function ReportPage() {
     });
   };
 
-  const resetForm = () => {
-    setSelectedRecord(null);
-    setIsEditMode(false);
-    setFormInput(initialFormState());
-  };
-
   const formatTanggalIndo = (tglStr: string) => {
     if (!tglStr || !tglStr.includes("-")) return tglStr;
     const [year, month, day] = tglStr.split("-");
@@ -224,6 +217,72 @@ export default function ReportPage() {
     return `${new Date(Number(year), Number(month) - 1).toLocaleString("id-ID", { month: "long" })} ${year}`;
   };
 
+  // 🌟 UPDATE FITUR EKSPOR CLIENT-SIDE DENGAN FORMAT EXCEL (.XLSX) SINKRON FILTER 🌟
+  const handleExportExcel = async () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data laporan terfilter yang tersedia untuk diekspor pada periode ini.");
+      return;
+    }
+
+    try {
+      const XLSX = await import("xlsx");
+
+      const dataToExport = filteredData.map((item: any) => {
+        const tRespon = Number(item.responCall ?? 0) + Number(item.responChat ?? 0) + Number(item.responMeeting ?? 0) + Number(item.responVisit ?? 0);
+        const tNoRespon = Number(item.noResponCount ?? item.totalNoRespon ?? 0);
+        
+        return {
+          "Tanggal Laporan": item.tanggal ? item.tanggal.substring(0, 10) : "-",
+          "PIC Sales": dapatkanNamaPanggilan(item.pic),
+          "Respon Call": item.responCall ?? 0,
+          "Respon Chat": item.responChat ?? 0,
+          "Online Meeting": item.responMeeting ?? 0,
+          "Visit Lapangan": item.responVisit ?? 0,
+          "Total Tidak Merrespon": tNoRespon,
+          "Total Terrespon": tRespon,
+          "Grand Total Leads": tRespon + tNoRespon,
+          "Keterangan Aktivitas": item.keterangan || "-"
+        };
+      });
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      // Auto-fit Ukuran Lebar Kolom Dokumen Excel
+      ws["!cols"] = [
+        { wch: 16 }, // Tanggal Laporan
+        { wch: 15 }, // PIC Sales
+        { wch: 14 }, // Respon Call
+        { wch: 14 }, // Respon Chat
+        { wch: 16 }, // Online Meeting
+        { wch: 16 }, // Visit Lapangan
+        { wch: 22 }, // Total Tidak Merrespon
+        { wch: 18 }, // Total Terrespon
+        { wch: 18 }, // Grand Total Leads
+        { wch: 45 }  // Keterangan Aktivitas
+      ];
+
+      const namaTab = modeFilter === "harian" ? `Report Hari ${filterDate}` : `Report Bulan ${filterMonth}`;
+      XLSX.utils.book_append_sheet(wb, ws, namaTab.substring(0, 31));
+
+      const namaFile = modeFilter === "harian"
+        ? `Daily_Report_Activity_Harian_${filterDate}.xlsx`
+        : `Daily_Report_Activity_Bulanan_${filterMonth}.xlsx`;
+
+      XLSX.writeFile(wb, namaFile);
+
+    } catch (error) {
+      console.error("Gagal mengekspor laporan kerja harian ke berkas Excel:", error);
+      alert("Terjadi gangguan teknis saat memproses pembuatan file Excel.");
+    }
+  };
+
+  const resetForm = () => {
+    setSelectedRecord(null);
+    setIsEditMode(false);
+    setFormInput(initialFormState());
+  };
+
   // 🔍 🌟 LOGIKA FILTER UTAMA HAK AKSES PER PIC SALES & ADMIN MULTI-USER
   const filteredData = data.filter((item: any) => {
     const itemPicPanggilan = dapatkanNamaPanggilan(item.pic || "");
@@ -233,13 +292,10 @@ export default function ReportPage() {
 
     const isUserAdmin = userRole.toLowerCase() === "admin";
     
-    // 🔒 PROSES FILTER AKSES KETAT
     let matchesRoleAkses: boolean;
     if (isUserAdmin) {
-      // Jika Admin, dia berhak memfilter data berdasarkan PIC yang dipilih di dropdown
       matchesRoleAkses = picFilterAdmin === "Semua" || itemPicPanggilan.toLowerCase() === picFilterAdmin.toLowerCase();
     } else {
-      // Jika Sales, dipaksa hanya melihat miliknya sendiri (Toleransi substring 4 karakter)
       const kunciPicDb = itemPicPanggilan.toLowerCase().substring(0, 4);
       const kunciPicLogin = loggedInUser.toLowerCase().substring(0, 4);
       matchesRoleAkses = kunciPicDb === kunciPicLogin || itemPicPanggilan.toLowerCase() === loggedInUser.toLowerCase();
@@ -271,8 +327,8 @@ export default function ReportPage() {
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080"}/api/report/export`}
-            className="px-4 py-2.5 bg-white border border-[#E5E5EA] rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm transition cursor-pointer"
+            onClick={handleExportExcel}
+            className="px-4 py-2.5 bg-white border border-[#E5E5EA] rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm transition cursor-pointer flex items-center gap-1"
           >
             📥 Export Excel
           </button>

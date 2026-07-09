@@ -71,18 +71,18 @@ export default function DashboardOverview() {
     setIsMounted(true);
   }, []);
 
-  // 🌟 HELPER PENAMAAN SINKRON: Ditambahkan toleransi string untuk mendeteksi Pak Boby
+  // Helper Penamaan Sinkron
   const dapatkanNamaPanggilan = (namaLengkap: string) => {
     if (!namaLengkap) return "Tim Sales";
-    const namaKecil = namaLengkap.toLowerCase().trim();
-    if (namaKecil.includes("satria")) return "Satria";
-    if (namaKecil.includes("boby") || namaKecil.includes("bobbi") || namaKecil.includes("bobbie")) return "Boby";
-    if (namaKecil.includes("lydia") || namaKecil.includes("lidya")) return "Lydia";
-    if (namaKecil.includes("laura")) return "Laura";
+    const namaKecKecil = namaLengkap.toLowerCase().trim();
+    if (namaKecKecil.includes("satria")) return "Satria";
+    if (namaKecKecil.includes("boby") || namaKecKecil.includes("bobbi") || namaKecKecil.includes("bobbie")) return "Boby";
+    if (namaKecKecil.includes("lydia") || namaKecKecil.includes("lidya")) return "Lydia";
+    if (namaKecKecil.includes("laura")) return "Laura";
     return namaLengkap.split(" ")[0];
   };
 
-  // AMAN SSR: Menentukan tingkatan hak akses role (Satria & Boby otomatis dideklarasikan sebagai ADMIN)
+  // Sistem Otentikasi & Role Akses
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedPic = localStorage.getItem("user_pic");
@@ -97,7 +97,6 @@ export default function DashboardOverview() {
       if (savedRole) {
         setUserRole(savedRole);
       } else {
-        // 🔒 SISTEM OTENTIKASI BARU: Satria & Boby memegang kontrol Admin, selain itu diposisikan sebagai Sales
         const namaBersih = panggilan.toLowerCase();
         if (namaBersih === "satria" || namaBersih === "boby") {
           setUserRole("Admin");
@@ -108,7 +107,7 @@ export default function DashboardOverview() {
     }
   }, []);
 
-  // 1. Mengambil data agregat summary cards (DIFILTER BERDASARKAN BULAN AKTIF & PROTEKSI PIC)
+  // Fetch Summary Cards Data
   useEffect(() => {
     const fetchDashboardStats = async () => {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
@@ -160,7 +159,7 @@ export default function DashboardOverview() {
     }
   }, [bulanDipilih, loggedInUser, userRole, isMounted]);
 
-  // 2. Fetch live data transaksi penjualan harian
+  // Fetch Live Data Transaksi Sales
   useEffect(() => {
     const fetchSalesData = async () => {
       setLoadingCharts(true);
@@ -254,34 +253,49 @@ export default function DashboardOverview() {
   const totalRealisasiOmset = filteredSales.reduce((sum, item) => sum + item.total_penjualan, 0);
   const pctOmsetTercapai = totalTargetNominal > 0 ? Math.round((totalRealisasiOmset / totalTargetNominal) * 100) : 0;
 
-  const handleExportChartData = () => {
+  // Fitur Ekspor Data Excel (.xlsx) Multi-Tab
+  const handleExportChartData = async () => {
     if (filteredSales.length === 0) {
       alert("Tidak ada data transaksi analitik yang tersedia untuk diekspor pada bulan ini.");
       return;
     }
 
-    let csvContent = "data:text/csv;charset=utf-8,";
-    csvContent += "--- PERFORMANCE CAPAIAN TIM SALES ---\n";
-    csvContent += "Nama Sales,Target Capaian (IDR),Realisasi Omset (IDR),Persentase Gol (%)\n";
-    dataGrafikBar.forEach((row: any) => {
-      const gol = row.Target > 0 ? Math.round((row.Realisasi / row.Target) * 100) : 0;
-      csvContent += `"${row.name}",${row.Target},${row.Realisasi},${gol}%\n`;
-    });
+    try {
+      const XLSX = await import("xlsx");
 
-    csvContent += "\n";
-    csvContent += "--- DISTRIBUSI PENJUALAN PAKET PRODUK ---\n";
-    csvContent += "Kategori Paket,Total Omset Terjual (IDR)\n";
-    dataGrafikPie.forEach((row: any) => {
-      csvContent += `"${row.name}",${row.value}\n`;
-    });
+      const dataSheetSales = dataGrafikBar.map((row: any) => {
+        const gol = row.Target > 0 ? Math.round((row.Realisasi / row.Target) * 100) : 0;
+        return {
+          "Nama Sales": row.name,
+          "Target Capaian (IDR)": row.Target,
+          "Realisasi Omset (IDR)": row.Realisasi,
+          "Persentase Gol": `${gol}%`
+        };
+      });
 
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Analitik_CRM_Piposmart_${bulanDipilih}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+      const dataSheetPaket = dataGrafikPie.map((row: any) => {
+        return {
+          "Kategori Paket": row.name,
+          "Total Omset Terjual (IDR)": row.value
+        };
+      });
+
+      const wb = XLSX.utils.book_new();
+      const wsSales = XLSX.utils.json_to_sheet(dataSheetSales);
+      const wsPaket = XLSX.utils.json_to_sheet(dataSheetPaket);
+
+      wsSales["!cols"] = [{ wch: 20 }, { wch: 22 }, { wch: 22 }, { wch: 18 }];
+      wsPaket["!cols"] = [{ wch: 22 }, { wch: 26 }];
+
+      XLSX.utils.book_append_sheet(wb, wsSales, "Performa Sales");
+      XLSX.utils.book_append_sheet(wb, wsPaket, "Distribusi Paket");
+
+      XLSX.writeFile(wb, `Analitik_CRM_Piposmart_${bulanDipilih}.xlsx`);
+
+    } catch (error) {
+      console.error("Gagal melakukan proses enkripsi ekspor Excel:", error);
+      alert("Terjadi masalah saat membuat file Excel asli. Silakan coba kembali.");
+    }
   };
 
   const stats = [
@@ -350,7 +364,7 @@ export default function DashboardOverview() {
         ))}
       </div>
 
-      {/* SEKSI INTERAKTIF: ANALISIS GRAFIK PERFORMA */}
+      {/* Analisis Grafik Performa */}
       <div className="space-y-4">
         <h2 className="text-xl font-bold text-[#1D1D1F]">Analitik Capaian Realisasi Bulanan</h2>
         {loadingCharts ? (
@@ -375,7 +389,8 @@ export default function DashboardOverview() {
                         <YAxis stroke="#888888" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => `${v / 1000000}M`} />
                         <Tooltip formatter={(value) => formatRupiah(value as number)} contentStyle={{ backgroundColor: "#fff", borderRadius: "12px", border: "1px solid #E5E5EA" }} />
                         <Legend iconType="circle" wrapperStyle={{ fontSize: "11px", paddingTop: "8px" }} />
-                        <Bar dataKey="Target" fill="#E5E5EA" radius={[5, 5, 0, 0]} maxBarSize={40} />
+                        {/* 🌟 PERUBAHAN: fill diubah ke Cool Slate Grey (#8E8E93) agar kontras tinggi dengan biru */}
+                        <Bar dataKey="Target" fill="#8E8E93" radius={[5, 5, 0, 0]} maxBarSize={40} />
                         <Bar dataKey="Realisasi" fill="#0071E3" radius={[5, 5, 0, 0]} maxBarSize={40} />
                       </BarChart>
                     </ResponsiveContainer>

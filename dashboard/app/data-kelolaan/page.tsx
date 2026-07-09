@@ -272,9 +272,48 @@ export default function DataKelolaanPage() {
     });
   };
 
-  const handleExportExcel = () => {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-    window.location.href = `${baseUrl}/api/kelolaan/export`;
+  // Fitur Ekspor Client-side Excel (.xlsx)
+  const handleExportExcel = async () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data kelolaan terfilter yang tersedia untuk diekspor pada periode ini.");
+      return;
+    }
+
+    try {
+      const XLSX = await import("xlsx");
+
+      const dataToExport = filteredData.map((item: any) => ({
+        "Tanggal Input / FU": formatTanggalIndo(item.tanggalFu?.substring(0, 10)),
+        "Bulan Berjalan": item.bulan || "-",
+        "Pic Team Hunter": bacaPicDariItem(item),
+        "Project / Brand (Outlet)": item.brand || "-",
+        "Nama Owner": item.namaOwner || "-",
+        "No Handphone Mitra": item.hpOwner || "-",
+        "Status Akun": item.statusAkun === "Akun Baru" || String(item.statusAkun).toLowerCase().includes("baru") ? "Akun Baru" : item.statusAkun,
+        "Sumber Nasabah": item.sumber || "-",
+        "Catatan Tambahan (Remaks)": item.noted || "-"
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      ws["!cols"] = [
+        { wch: 20 }, { wch: 16 }, { wch: 18 }, { wch: 26 }, { wch: 22 }, { wch: 18 }, { wch: 16 }, { wch: 20 }, { wch: 35 }
+      ];
+
+      const namaTab = modeFilter === "harian" ? `Log Hari ${filterDate}` : `Log Bulan ${filterMonth}`;
+      XLSX.utils.book_append_sheet(wb, ws, namaTab.substring(0, 31));
+
+      const namaFile = modeFilter === "harian"
+        ? `Log_Data_Kelolaan_Piposmart_Harian_${filterDate}.xlsx`
+        : `Log_Data_Kelolaan_Piposmart_Bulanan_${filterMonth}.xlsx`;
+
+      XLSX.writeFile(wb, namaFile);
+
+    } catch (error) {
+      console.error("Gagal mengekspor data kelolaan ke file Excel:", error);
+      alert("Terjadi kesalahan teknis saat mencoba memproses dokumen Excel.");
+    }
   };
 
   const resetForm = () => {
@@ -325,19 +364,31 @@ export default function DataKelolaanPage() {
         <div>
           <h1 className="text-2xl font-black tracking-tight">Data Kelolaan CRM</h1>
           <p className="text-xs text-gray-500 mt-0.5 font-medium">Monitoring data log aktivitas hubungan kelolaan mitra operasional terintegrasi.</p>
-          <div className="text-xs text-gray-400 font-bold mt-1">
-            Logged in: <span className="text-[#007AFF]">👤 {isSessionReady ? loggedInUser : "Loading..."}</span>
+          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1.5">
+            {/* 🌟 UPDATE ICON: SVG User Avatar Minimalis */}
+            <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Logged in: <span className="text-[#007AFF] font-black">{isSessionReady ? loggedInUser : "Loading..."}</span>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <button onClick={handleExportExcel} className="px-4 py-2.5 text-xs font-bold text-[#1C1C1E] bg-white border border-gray-200 rounded-xl hover:bg-gray-50 shadow-sm cursor-pointer">
-            Public 📤 Export Excel
+          <button onClick={handleExportExcel} className="px-4 py-2.5 text-xs font-bold text-[#1C1C1E] bg-white border border-gray-200 rounded-xl hover:bg-gray-50 shadow-sm cursor-pointer flex items-center gap-1.5">
+            {/* 🌟 UPDATE ICON: SVG Download Dokumen */}
+            <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export Excel
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }} 
             className="px-5 py-2.5 text-xs font-bold text-white bg-[#007AFF] rounded-xl hover:bg-blue-600 shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
-            <span>➕</span> Tambah Record Kelolaan
+            {/* 🌟 UPDATE ICON: SVG Plus Minimalis */}
+            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Tambah Record Kelolaan
           </button>
         </div>
       </div>
@@ -346,7 +397,12 @@ export default function DataKelolaanPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm">
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
-            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+            {/* 🌟 UPDATE ICON: SVG Search Kaca Pembesar */}
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input 
               type="text" placeholder="Cari Brand, Owner, atau Nama PIC..." value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -356,7 +412,11 @@ export default function DataKelolaanPage() {
 
           {isSessionReady && userRole.toLowerCase() === "admin" && (
             <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">👤 PIC:</span>
+              {/* 🌟 UPDATE ICON: SVG User khusus penanda filter dropdown Admin */}
+              <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">PIC:</span>
               <select
                 value={picFilterAdmin}
                 onChange={(e) => setPicFilterAdmin(e.target.value)}
@@ -377,6 +437,10 @@ export default function DataKelolaanPage() {
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
           <div className="flex items-center gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-gray-200">
+            {/* 🌟 UPDATE ICON: SVG Kalender untuk bagian input tanggal */}
+            <svg className="w-3.5 h-3.5 text-gray-500 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
             <input 
               type={modeFilter === "harian" ? "date" : "month"} value={modeFilter === "harian" ? filterDate : filterMonth}
               onChange={(e) => modeFilter === "harian" ? setFilterDate(e.target.value) : setFilterMonth(e.target.value)}
@@ -408,10 +472,9 @@ export default function DataKelolaanPage() {
                       item.statusAkun === "Berlangganan" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                       item.statusAkun === "Follow Up" ? "bg-amber-50 text-amber-700 border-amber-200" :
                       item.statusAkun === "Top Up" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                      "bg-sky-50 text-sky-700 border-sky-200" // 🌟 Tag Biru Cerah (Sky) Untuk Akun Baru
+                      "bg-sky-50 text-sky-700 border-sky-200"
                     }`}>
-                      {/* 🌟 FORCE TEXT KETAT: Mengabaikan sisa-sisa konversi string, dipaksa tertulis Akun Baru */}
-                      {item.statusAkun === "Akun Baru" || String(item.statusAkun).toLowerCase().includes("baru") ? "Akun Baru" : item.statusAkun}
+                      {item.statusAkun === "Account Baru" || item.statusAkun === "Akun Baru" || String(item.statusAkun).toLowerCase().includes("baru") ? "Akun Baru" : item.statusAkun}
                     </span>
                   ) 
                 },
@@ -428,8 +491,12 @@ export default function DataKelolaanPage() {
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4 border border-[#E5E5EA] max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
-              <h2 className="text-md font-bold text-[#1D1D1F]">
-                {selectedRecord && !isEditMode ? "📋 Rincian Data Kelolaan" : isEditMode ? "✏️ Ubah Data Kelolaan" : "➕ Tambah Record Baru"}
+              <h2 className="text-md font-bold text-[#1D1D1F] flex items-center gap-1.5">
+                {/* 🌟 UPDATE ICON: SVG File Dokumen pada judul modal */}
+                <svg className="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                {selectedRecord && !isEditMode ? "Rincian Data Kelolaan" : isEditMode ? "Ubah Data Kelolaan" : "Tambah Record Baru"}
               </h2>
               <button type="button" onClick={() => setIsModalOpen(false)} className="text-[#86868B] text-lg hover:text-black cursor-pointer">✕</button>
             </div>
@@ -472,11 +539,29 @@ export default function DataKelolaanPage() {
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1">
                   <label>NAMA OWNER</label>
-                  <input type="text" name="namaOwner" value={selectedRecord && !isEditMode ? selectedRecord.namaOwner : formInput.namaOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-[#1D1D1F] disabled:bg-[#F5F5F7] focus:outline-none" required />
+                  <input 
+                    type="text" 
+                    name="namaOwner" 
+                    placeholder="Contoh: Hendra Wijaya" 
+                    value={selectedRecord && !isEditMode ? selectedRecord.namaOwner : formInput.namaOwner} 
+                    onChange={handleInputChange} 
+                    disabled={selectedRecord && !isEditMode} 
+                    className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-[#1D1D1F] disabled:bg-[#F5F5F7] focus:outline-none placeholder:text-gray-300 placeholder:font-normal" 
+                    required 
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>NO. HP OWNER</label>
-                  <input type="text" name="hpOwner" value={selectedRecord && !isEditMode ? selectedRecord.hpOwner : formInput.hpOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-[#1D1D1F] disabled:bg-[#F5F5F7] focus:outline-none" required />
+                  <input 
+                    type="text" 
+                    name="hpOwner" 
+                    placeholder="Contoh: 081234567890" 
+                    value={selectedRecord && !isEditMode ? selectedRecord.hpOwner : formInput.hpOwner} 
+                    onChange={handleInputChange} 
+                    disabled={selectedRecord && !isEditMode} 
+                    className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-[#1D1D1F] disabled:bg-[#F5F5F7] focus:outline-none placeholder:text-gray-300 placeholder:font-normal" 
+                    required 
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>PIC</label>
@@ -487,7 +572,16 @@ export default function DataKelolaanPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                   <label>PROJECT / BRAND (OUTLET)</label>
-                  <input type="text" name="brand" value={selectedRecord && !isEditMode ? selectedRecord.brand : formInput.brand} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-[#1D1D1F] disabled:bg-[#F5F5F7] focus:outline-none" required />
+                  <input 
+                    type="text" 
+                    name="brand" 
+                    placeholder="Contoh: Kopi Kenangan - Batam Center" 
+                    value={selectedRecord && !isEditMode ? selectedRecord.brand : formInput.brand} 
+                    onChange={handleInputChange} 
+                    disabled={selectedRecord && !isEditMode} 
+                    className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-[#1D1D1F] disabled:bg-[#F5F5F7] focus:outline-none placeholder:text-gray-300 placeholder:font-normal" 
+                    required 
+                  />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>SUMBER NASABAH</label>
@@ -505,15 +599,35 @@ export default function DataKelolaanPage() {
 
               <div className="flex flex-col gap-1">
                 <label>CATATAN TAMBAHAN (REMAKS / NOTED)</label>
-                <textarea name="noted" rows={3} value={selectedRecord && !isEditMode ? selectedRecord.noted : formInput.noted} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-[#1D1D1F] disabled:bg-[#F5F5F7] resize-none focus:outline-none font-sans" />
+                <textarea 
+                  name="noted" 
+                  rows={3} 
+                  placeholder="Contoh: Owner tertarik dengan POS Bundle Business, minta di-hubungi kembali hari Jumat sore jam 16.00 setelah toko senggang." 
+                  value={selectedRecord && !isEditMode ? selectedRecord.noted : formInput.noted} 
+                  onChange={handleInputChange} 
+                  disabled={selectedRecord && !isEditMode} 
+                  className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-[#1D1D1F] disabled:bg-[#F5F5F7] resize-none focus:outline-none font-sans placeholder:text-gray-300 placeholder:font-normal placeholder:leading-relaxed" 
+                />
               </div>
 
               <div className="flex justify-between items-center pt-3 border-t border-gray-100">
                 <div>
                   {selectedRecord && !isEditMode && (
                     <div className="flex gap-2">
-                      <button type="button" onClick={handleActivateEditMode} className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold hover:bg-amber-100 text-xs transition cursor-pointer">✏️ Edit</button>
-                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-100 text-xs transition cursor-pointer">🗑️ Hapus</button>
+                      {/* 🌟 UPDATE ICON: SVG Pencil / Edit Button */}
+                      <button type="button" onClick={handleActivateEditMode} className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold hover:bg-amber-100 text-xs transition cursor-pointer flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                      {/* 🌟 UPDATE ICON: SVG Trash / Delete Button */}
+                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-100 text-xs transition cursor-pointer flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Hapus
+                      </button>
                     </div>
                   )}
                 </div>

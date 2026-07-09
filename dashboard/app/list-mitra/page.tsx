@@ -105,7 +105,7 @@ export default function ListMitraPage() {
     }
   }, [isModalOpen, isEditMode]);
 
-  // SINKRONISASI BACKEND LOGIC: Memastikan pemetaan properti field aman dari tanda strip (-)
+  // SINKRONISASI BACKEND LOGIC
   const normalisasiMitra = (item: any) => {
     return {
       id: item.id ?? item.ID,
@@ -136,7 +136,7 @@ export default function ListMitraPage() {
       }
     } catch (error) {
       console.error("Gagal memuat data master list mitra:", error);
-    } finally { // 🌟 FIXED: Diubah kembali ke sintaks JS yang benar yaitu finally, bukan calendar
+    } finally { 
       setLoading(false);
     }
   };
@@ -248,6 +248,63 @@ export default function ListMitraPage() {
     setIsEditMode(true);
   };
 
+  // 🌟 UPDATE FITUR EKSPOR CLIENT-SIDE DENGAN FORMAT EXCEL (.XLSX) SINKRON FILTER 🌟
+  const handleExportExcel = async () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data master mitra terfilter yang tersedia untuk diekspor pada periode ini.");
+      return;
+    }
+
+    try {
+      const XLSX = await import("xlsx");
+
+      const dataToExport = filteredData.map((item: any) => ({
+        "Tanggal Registrasi": item.createdAt ? item.createdAt.substring(0, 10) : "-",
+        "Bulan Terdaftar": item.bulanTerdaftar || "-",
+        "Tahun Buku": item.tahun || "-",
+        "PIC Sales Hunter": dapatkanNamaPanggilan(item.picNasabah),
+        "Kode Owner": item.kodeOwner || "-",
+        "Nama Owner": item.owner || "-",
+        "Nama Brand / Toko": item.brand || "-",
+        "Kategori Utama": item.kategoriMitra || "-",
+        "Sub Kategori": item.kategoriMitraSub || "-",
+        "Total Akuisisi Referal": item.totalAkuisisiReferal ?? 0,
+        "Total Referral": item.totalReferral ?? 0
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      // Auto-fit Ukuran Lebar Kolom Dokumen Excel
+      ws["!cols"] = [
+        { wch: 18 }, // Tanggal Registrasi
+        { wch: 16 }, // Bulan Terdaftar
+        { wch: 12 }, // Tahun Buku
+        { wch: 18 }, // PIC Sales Hunter
+        { wch: 14 }, // Kode Owner
+        { wch: 22 }, // Nama Owner
+        { wch: 25 }, // Nama Brand / Toko
+        { wch: 26 }, // Kategori Utama
+        { wch: 20 }, // Sub Kategori
+        { wch: 22 }, // Total Akuisisi Referal
+        { wch: 16 }  // Total Referral
+      ];
+
+      const namaTab = modeFilter === "harian" ? `Mitra Hari ${tanggalFilter}` : `Mitra Bulan ${bulanFilter}`;
+      XLSX.utils.book_append_sheet(wb, ws, namaTab.substring(0, 31));
+
+      const namaFile = modeFilter === "harian"
+        ? `Direktori_Master_Mitra_Harian_${tanggalFilter}.xlsx`
+        : `Direktori_Master_Mitra_Bulanan_${bulanFilter}.xlsx`;
+
+      XLSX.writeFile(wb, namaFile);
+
+    } catch (error) {
+      console.error("Gagal mengekspor direktori master mitra ke Excel:", error);
+      alert("Terjadi kegagalan teknis saat memproses pembuatan berkas Excel.");
+    }
+  };
+
   const resetForm = () => {
     setSelectedRecord(null);
     setIsEditMode(false);
@@ -296,10 +353,10 @@ export default function ListMitraPage() {
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => window.location.href = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080") + "/api/list-mitra/export"}
-            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm transition-all cursor-pointer"
+            onClick={handleExportExcel}
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1"
           >
-            Public 📤 Export Excel
+            📥 Export Excel
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
@@ -346,7 +403,7 @@ export default function ListMitraPage() {
           <div className="flex items-center gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-gray-200">
             <input 
               type={modeFilter === "harian" ? "date" : "month"} value={modeFilter === "harian" ? tanggalFilter : bulanFilter}
-              onChange={(e) => modeFilter === "harian" ? setTanggalFilter(e.target.value) : setBulanFilter(e.target.value)}
+              onChange={(e) => modeFilter === "harian" ? setFilterDate(e.target.value) : setBulanFilter(e.target.value)}
               className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer uppercase p-0.5"
             />
           </div>

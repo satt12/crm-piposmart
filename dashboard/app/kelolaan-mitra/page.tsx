@@ -15,7 +15,7 @@ export default function KelolaanMitraPage() {
   // STATE USER DROPDOWN FILTER UNTUK ADMIN
   const [picFilterAdmin, setPicFilterAdmin] = useState("Semua");
 
-  // STATE USER LOGIN & SESSION (Aman dari Eror Hydration SSR)
+  // STATE USER LOGIN & SESSION
   const [isSessionReady, setIsSessionReady] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState("Satria");
   const [userRole, setUserRole] = useState("Sales");
@@ -70,6 +70,14 @@ export default function KelolaanMitraPage() {
   });
 
   const [formInput, setFormInput] = useState(initialFormState);
+
+  // 🌟 HELPER BARU: Format Angka Menjadi Ribuan Indonesia (Titik)
+  const formatRibuanIndo = (nilai: number | string) => {
+    if (nilai === undefined || nilai === null || nilai === "") return "";
+    const angkaMurni = String(nilai).replace(/\D/g, "");
+    if (!angkaMurni) return "";
+    return new Intl.NumberFormat("id-ID").format(Number(angkaMurni));
+  };
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -149,12 +157,23 @@ export default function KelolaanMitraPage() {
     return Array.from(setPic).sort();
   }, [data]);
 
+  // 🌟 UPDATE: Menangani perubahan input teks dengan filter titik koma otomatis
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormInput((prev) => ({
-      ...prev,
-      [name]: name === "nominal_komisi" ? (value === "" ? "" : Number(value)) : value,
-    }));
+    
+    if (name === "nominal_komisi") {
+      // Buang semua karakter yang bukan angka
+      const murniAngka = value.replace(/\D/g, "");
+      setFormInput((prev) => ({
+        ...prev,
+        [name]: murniAngka
+      }));
+    } else {
+      setFormInput((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   const handleMitraSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -175,10 +194,12 @@ export default function KelolaanMitraPage() {
     e.preventDefault();
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+      
+      // 🌟 UPDATE: Bersihkan string titik sebelum dikirim sebagai number ke backend
       const payload = {
         ...formInput,
         picNasabah: dapatkanNamaPanggilan(formInput.picNasabah),
-        nominal_komisi: Number(formInput.nominal_komisi) || 0
+        nominal_komisi: Number(String(formInput.nominal_komisi).replace(/\D/g, "")) || 0
       };
 
       const url = isEditMode && selectedRecord
@@ -241,9 +262,55 @@ export default function KelolaanMitraPage() {
       statusLangganan: selectedRecord.statusLangganan || "Berlangganan",
       buktiFu: selectedRecord.buktiFu || "",
       statusInput: selectedRecord.statusInput || "Done",
-      nominal_komisi: selectedRecord.nominal_komisi !== undefined ? selectedRecord.nominal_komisi : "",
+      // Pastikan diekstrak sebagai angka murni
+      nominal_komisi: selectedRecord.nominal_komisi !== undefined ? String(selectedRecord.nominal_komisi).replace(/\D/g, "") : "",
       status_komisi: selectedRecord.status_komisi || "Pending"
     });
+  };
+
+  const handleExportExcel = async () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data kelolaan mitra terfilter yang tersedia untuk diekspor pada periode ini.");
+      return;
+    }
+
+    try {
+      const XLSX = await import("xlsx");
+
+      const dataToExport = filteredData.map((item: any) => ({
+        "Tanggal Input": item.tanggalInput ? item.tanggalInput.substring(0, 10) : "-",
+        "CRM PIC Nasabah": dapatkanNamaPanggilan(item.picNasabah),
+        "Kode Owner": item.kodeOwnerUtama || "-",
+        "Nama Mitra Utama": item.namaMitra || "-",
+        "Brand / Badan Usaha": item.brandUtama || "-",
+        "Kategori Kemitraan": item.kategoriMitra || "-",
+        "Paket Langganan": item.paketLangganan || "-",
+        "Nominal Komisi (Rp)": Number(item.nominal_komisi) || 0,
+        "Status Komisi": item.status_komisi === "Selesai" ? "Cair" : "Pending",
+        "Status Langganan": item.statusLangganan || "-"
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      ws["!cols"] = [
+        { wch: 15 }, { wch: 18 }, { wch: 14 }, { wch: 22 }, { wch: 25 },
+        { wch: 25 }, { wch: 20 }, { wch: 20 }, { wch: 15 }, { wch: 18 }
+      ];
+
+      const namaTab = modeFilter === "harian" ? `Kelolaan Hari ${tanggalFilter}` : `Kelolaan Bulan ${bulanFilter}`;
+      XLSX.utils.book_append_sheet(wb, ws, namaTab.substring(0, 31));
+
+      const namaFile = modeFilter === "harian"
+        ? `Data_Kelolaan_Mitra_Harian_${tanggalFilter}.xlsx`
+        : `Data_Kelolaan_Mitra_Bulanan_${bulanFilter}.xlsx`;
+
+      XLSX.writeFile(wb, namaFile);
+
+    } catch (error) {
+      console.error("Gagal melakukan proses penulisan file Excel:", error);
+      alert("Terjadi gangguan teknis saat mengunduh dokumen Excel.");
+    }
   };
 
   const resetForm = () => {
@@ -313,10 +380,10 @@ export default function KelolaanMitraPage() {
         </div>
         <div className="flex items-center gap-3">
           <button 
-            onClick={() => window.location.href = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080") + "/api/kelolaan-mitra/export"}
-            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm cursor-pointer"
+            onClick={handleExportExcel}
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm cursor-pointer flex items-center gap-1"
           >
-            Public 📤 Export Excel
+            📥 Export Excel
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
@@ -515,7 +582,16 @@ export default function KelolaanMitraPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-amber-900">Nominal Komisi (Rp)</label>
-                    <input type="number" name="nominal_komisi" placeholder="Contoh: 250000" value={selectedRecord && !isEditMode ? selectedRecord.nominal_komisi : formInput.nominal_komisi} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white disabled:bg-gray-100/70 focus:outline-none" />
+                    {/* 🌟 UPDATE VIEW FORM: Menggunakan tipe text & helper formatRibuanIndo */}
+                    <input 
+                      type="text" 
+                      name="nominal_komisi" 
+                      placeholder="Contoh: 250.000" 
+                      value={selectedRecord && !isEditMode ? formatRibuanIndo(selectedRecord.nominal_komisi) : formatRibuanIndo(formInput.nominal_komisi)} 
+                      onChange={handleInputChange} 
+                      disabled={selectedRecord && !isEditMode} 
+                      className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white disabled:bg-gray-100/70 focus:outline-none" 
+                    />
                   </div>
                   <div className="flex flex-col gap-1.5">
                     <label className="text-amber-900">Status Pencairan Komisi</label>
