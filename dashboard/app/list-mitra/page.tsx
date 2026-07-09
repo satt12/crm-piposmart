@@ -334,7 +334,7 @@ export default function ListMitraPage() {
       {/* HEADER SECTION */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between bg-white rounded-2xl p-6 border border-gray-200 shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-black tracking-tight">Direktori Master Mitra</h1>
+          <h1 className="text-2xl font-black tracking-tight">Data List Mitra</h1>
           <p className="text-xs text-gray-500 mt-0.5 font-medium">Manajemen ekosistem kemitraan korporasi & pelacakan referral harian.</p>
           <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1.5">
             <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
