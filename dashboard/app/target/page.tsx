@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import TargetSalesTable from "../components/TargetSalesTable";
 
 export default function TargetPage() {
   const [listData, setListData] = useState([]);
@@ -140,11 +141,35 @@ export default function TargetPage() {
     return "text-gray-950 font-black";
   };
 
+  // Update mendapatkan style label keterangan peforama
+  const dapatkanStyleJudulPeforma = (persentase: number) => {
+    if (persentase >= 100) return "bg-green-700 text-green-200";
+    if (persentase >= 70) return "bg-yellow-700 text-yellow-200";
+    if (persentase >= 50) return "bg-red-700 text-red-100";
+    return "bg-gray-700 text-gray-200";
+  };
+
   const dapatkanTeksPenilaian = (persentase: number) => {
     if (persentase >= 100) return "Hijau";
     if (persentase >= 70) return "Kuning";
     if (persentase >= 50) return "Merah";
     return "Hitam";
+  };
+
+  // Update, Membuat fungsi untuk mendapatkan teks penilaian berdasarkan peforma
+  const dapatkanJudulPenilaianPeforma = (persentse: number) => {
+    if (persentse >= 100) return "Sangat Unggul";
+    if (persentse >= 70) return "Posisi Aman";
+    if (persentse >= 50) return "Posisi Bahaya";
+    return "Sanksi Penalti";
+  };
+
+  // Update, Membuat fungsi untuk mendapatkan deskripsi penilaian berdasarkan peforma
+  const dapatkanDeskripsiPenilaianPeforma = (persentse: number) => {
+    if (persentse >= 100) return "Terpenuhi sempurna mencapai 100% dari akumulasi target bulanan.";
+    if (persentse >= 70) return "Batas minimal pencapaian wajib menyentuh angka 70% dari Target Nominal.";
+    if (persentse >= 50) return "Angka konversi tidak aman apabila pencapaian berada di kisaran 50% dari target.";
+    return "Berlaku pemantauan ketat khusus apabila omset riil berada di bawah batas 30%.";
   };
 
   // Agregasi Map data per PIC Sales
@@ -293,150 +318,256 @@ export default function TargetPage() {
           </p>
         </div>
       ) : (
-        <div className="w-full overflow-x-auto border border-[#E5E5EA] rounded-2xl bg-white shadow-sm">
-          <table className="min-w-full divide-y divide-[#E5E5EA] text-center text-sm font-bold whitespace-nowrap table-auto">
-            <thead>
-              <tr className="text-xs uppercase tracking-wider text-[#1D1D1F]">
-                <th rowSpan={2} className="px-6 py-4 border-b border-r bg-[#F2F2F7] text-left min-w-[140px]">PIC Penjualan</th>
-                <th colSpan={2} className="px-6 py-3 border-b border-r bg-[#FFB938] text-gray-900 font-black">Target Penjualan</th>
-                <th colSpan={2} className="px-6 py-3 border-b border-r bg-[#2E9D52] text-white font-black">Total Realisasi</th>
-                <th rowSpan={2} className="px-5 py-4 border-b border-r bg-[#D23D33] text-white">Kekurangan User</th>
-                
-                {filterMingguan === "All" ? (
-                  <>
-                    <th rowSpan={2} className="px-5 py-3 border-b border-r bg-[#D23D33] text-white text-[10px] leading-tight min-w-[120px]">Persentase<br/>Tercapai User (%)</th>
-                    <th rowSpan={2} className="px-5 py-3 border-b border-r bg-[#D23D33] text-white text-[10px] leading-tight min-w-[120px]">Persentase Target<br/>Booking (%)</th>
-                    <th rowSpan={2} className="px-5 py-3 border-b border-r bg-[#D23D33] text-white text-[11px] min-w-[130px]">Penilaian Membership</th>
-                    <th rowSpan={2} className="px-5 py-3 border-b bg-[#D23D33] text-white text-[11px] min-w-[120px]">Penilaian Target</th>
-                  </>
-                ) : (
-                  <th colSpan={2} className="px-4 py-2 border-b bg-blue-50 text-[#0071E3]">Pencapaian Week {filterMingguan}</th>
-                )}
-              </tr>
-              <tr className="text-[10px] bg-gray-50 uppercase text-gray-500 border-b">
-                <th className="px-4 py-2 border-r min-w-[70px]">User 📝</th>
-                <th className="px-6 py-2 border-r min-w-[130px]">Nominal Omset 📝</th>
-                <th className="px-4 py-2 border-r min-w-[70px]">User</th>
-                <th className="px-6 py-2 border-r min-w-[140px]">Omset</th>
-                {filterMingguan !== "All" && (
-                  <>
-                    <th className="px-3 py-2 border-r bg-blue-50/40 min-w-[60px]">User</th>
-                    <th className="px-5 py-2 bg-blue-50/40 min-w-[120px]">Omset</th>
-                  </>
-                )}
-              </tr>
-            </thead>
-            
-            <tbody className="divide-y divide-[#E5E5EA] text-[#1D1D1F]">
-              {dataTargetFinal.map((item: any, idx) => {
-                const mingguAktif = dapatkanDataMingguAktif(item);
-                const selisihUser = item.realisasiUser - item.targetUser;
-                
-                const pctUser = item.targetUser > 0 ? Math.round((item.realisasiUser / item.targetUser) * 100) : 0;
-                const pctOmset = item.targetNominal > 0 ? Math.round((item.realisasiOmset / item.targetNominal) * 100) : 0;
 
-                return (
-                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                    <td 
-                      onClick={() => setSelectedPicData({ name: item.name, transactions: item.rawTransactions })}
-                      className="px-6 py-4 border-r text-left text-[#007AFF] hover:underline font-bold bg-gray-50/30 cursor-pointer select-none"
-                    >
-                      👤 {item.name}
-                    </td>
-                    
-                    {/* Input Edit Target User */}
-                    <td className="px-4 py-4 border-r">
-                      {editingKey === `user-${item.name}` ? (
-                        <input 
-                          type="number" defaultValue={item.targetUser}
-                          onBlur={(e) => {
-                            handleSaveInlineTarget(item.name, "user", Number(e.target.value) || 0);
-                            setEditingKey(null);
-                          }}
-                          onKeyDown={handleKeyDownEnter} autoFocus className="w-14 text-center border outline-none font-bold text-sm bg-white"
-                        />
+        <div>
+          {/* Tabel lama */}
+          <div className="w-full hidden overflow-x-auto border border-[#E5E5EA] rounded-2xl bg-white shadow-sm">
+            <table className="min-w-full divide-y divide-[#E5E5EA] text-center text-sm font-bold whitespace-nowrap table-auto">
+              <thead>
+                <tr className="text-xs uppercase tracking-wider text-[#1D1D1F]">
+                  <th rowSpan={2} className="px-6 py-4 border-b border-r bg-[#F2F2F7] text-left min-w-[140px]">PIC Penjualan</th>
+                  <th colSpan={2} className="px-6 py-3 border-b border-r bg-[#FFB938] text-gray-900 font-black">Target Penjualan</th>
+                  <th colSpan={2} className="px-6 py-3 border-b border-r bg-[#2E9D52] text-white font-black">Total Realisasi</th>
+                  <th rowSpan={2} className="px-5 py-4 border-b border-r bg-[#D23D33] text-white">Kekurangan User</th>
+                  
+                  {filterMingguan === "All" ? (
+                    <>
+                      <th rowSpan={2} className="px-5 py-3 border-b border-r bg-[#D23D33] text-white text-[10px] leading-tight min-w-[120px]">Persentase<br/>Tercapai User (%)</th>
+                      <th rowSpan={2} className="px-5 py-3 border-b border-r bg-[#D23D33] text-white text-[10px] leading-tight min-w-[120px]">Persentase Target<br/>Booking (%)</th>
+                      <th rowSpan={2} className="px-5 py-3 border-b border-r bg-[#D23D33] text-white text-[11px] min-w-[130px]">Penilaian Membership</th>
+                      <th rowSpan={2} className="px-5 py-3 border-b bg-[#D23D33] text-white text-[11px] min-w-[120px]">Penilaian Target</th>
+                    </>
+                  ) : (
+                    <th colSpan={2} className="px-4 py-2 border-b bg-blue-50 text-[#0071E3]">Pencapaian Week {filterMingguan}</th>
+                  )}
+                </tr>
+                <tr className="text-[10px] bg-gray-50 uppercase text-gray-500 border-b">
+                  <th className="px-4 py-2 border-r min-w-[70px]">User 📝</th>
+                  <th className="px-6 py-2 border-r min-w-[130px]">Nominal Omset 📝</th>
+                  <th className="px-4 py-2 border-r min-w-[70px]">User</th>
+                  <th className="px-6 py-2 border-r min-w-[140px]">Omset</th>
+                  {filterMingguan !== "All" && (
+                    <>
+                      <th className="px-3 py-2 border-r bg-blue-50/40 min-w-[60px]">User</th>
+                      <th className="px-5 py-2 bg-blue-50/40 min-w-[120px]">Omset</th>
+                    </>
+                  )}
+                </tr>
+              </thead>
+              
+              <tbody className="divide-y divide-[#E5E5EA] text-[#1D1D1F]">
+                {dataTargetFinal.map((item: any, idx) => {
+                  const mingguAktif = dapatkanDataMingguAktif(item);
+                  const selisihUser = item.realisasiUser - item.targetUser;
+                  
+                  const pctUser = item.targetUser > 0 ? Math.round((item.realisasiUser / item.targetUser) * 100) : 0;
+                  const pctOmset = item.targetNominal > 0 ? Math.round((item.realisasiOmset / item.targetNominal) * 100) : 0;
+
+                  return (
+                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                      <td 
+                        onClick={() => setSelectedPicData({ name: item.name, transactions: item.rawTransactions })}
+                        className="px-6 py-4 border-r text-left text-[#007AFF] hover:underline font-bold bg-gray-50/30 cursor-pointer select-none"
+                      >
+                        👤 {item.name}
+                      </td>
+                      
+                      {/* Input Edit Target User */}
+                      <td className="px-4 py-4 border-r">
+                        {editingKey === `user-${item.name}` ? (
+                          <input 
+                            type="number" defaultValue={item.targetUser}
+                            onBlur={(e) => {
+                              handleSaveInlineTarget(item.name, "user", Number(e.target.value) || 0);
+                              setEditingKey(null);
+                            }}
+                            onKeyDown={handleKeyDownEnter} autoFocus className="w-14 text-center border outline-none font-bold text-sm bg-white"
+                          />
+                        ) : (
+                          <span onClick={() => setEditingKey(`user-${item.name}`)} className="cursor-pointer border-b border-dashed border-gray-400 hover:text-blue-600 px-1">{item.targetUser}</span>
+                        )}
+                      </td>
+
+                      {/* Input Edit Target Nominal Omset */}
+                      <td className="px-6 py-4 border-r text-center">
+                        {editingKey === `nominal-${item.name}` ? (
+                          <input 
+                            type="text" value={tempNominalValue}
+                            onChange={(e) => setTempNominalValue(formatRibuanIndo(e.target.value))}
+                            onBlur={() => {
+                              handleSaveInlineTarget(item.name, "nominal", Number(tempNominalValue.replace(/\D/g, "")) || 0);
+                              setEditingKey(null);
+                            }}
+                            onKeyDown={handleKeyDownEnter} autoFocus className="w-28 text-center border-2 border-[#007AFF] rounded-xl outline-none px-1 py-0.5 font-bold text-sm bg-white"
+                          />
+                        ) : (
+                          <span onClick={() => {
+                            setEditingKey(`nominal-${item.name}`);
+                            setTempNominalValue(formatRibuanIndo(item.targetNominal));
+                          }} className="cursor-pointer border-b border-dashed border-gray-400 hover:text-blue-600">{new Intl.NumberFormat("id-ID").format(item.targetNominal)}</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-4 border-r text-center text-gray-700">{item.realisasiUser}</td>
+                      <td className="px-6 py-4 border-r text-center text-gray-700">{formatRupiahSakti(item.realisasiOmset)}</td>
+
+                      <td className={`px-4 py-4 border-r text-center font-semibold ${selisihUser < 0 ? "text-red-600" : "text-emerald-600"}`}>
+                        {selisihUser}
+                      </td>
+
+                      {filterMingguan === "All" ? (
+                        <>
+                          <td className="px-4 py-4 border-r text-center text-gray-700">{pctUser}%</td>
+                          <td className="px-4 py-4 border-r text-center text-gray-700">{pctOmset}%</td>
+                          <td className={`px-4 py-4 border-r text-center ${dapatkanStyleWarnaTeksStatus(pctUser)}`}>
+                            {dapatkanTeksPenilaian(pctUser)}
+                          </td>
+                          <td className={`px-4 py-4 text-center ${dapatkanStyleWarnaTeksStatus(pctOmset)}`}>
+                            {dapatkanTeksPenilaian(pctOmset)}
+                          </td>
+                        </>
                       ) : (
-                        <span onClick={() => setEditingKey(`user-${item.name}`)} className="cursor-pointer border-b border-dashed border-gray-400 hover:text-blue-600 px-1">{item.targetUser}</span>
+                        <>
+                          <td className="px-2 py-4 border-r bg-gray-50 text-gray-500 font-medium">{mingguAktif.user}</td>
+                          <td className="px-4 py-4 bg-gray-50 text-gray-400 font-normal">{formatRupiahSakti(mingguAktif.omset)}</td>
+                        </>
                       )}
-                    </td>
+                    </tr>
+                  );
+                })}
 
-                    {/* Input Edit Target Nominal Omset */}
-                    <td className="px-6 py-4 border-r text-center">
-                      {editingKey === `nominal-${item.name}` ? (
-                        <input 
-                          type="text" value={tempNominalValue}
-                          onChange={(e) => setTempNominalValue(formatRibuanIndo(e.target.value))}
-                          onBlur={() => {
-                            handleSaveInlineTarget(item.name, "nominal", Number(tempNominalValue.replace(/\D/g, "")) || 0);
-                            setEditingKey(null);
-                          }}
-                          onKeyDown={handleKeyDownEnter} autoFocus className="w-28 text-center border-2 border-[#007AFF] rounded-xl outline-none px-1 py-0.5 font-bold text-sm bg-white"
-                        />
-                      ) : (
-                        <span onClick={() => {
-                          setEditingKey(`nominal-${item.name}`);
-                          setTempNominalValue(formatRibuanIndo(item.targetNominal));
-                        }} className="cursor-pointer border-b border-dashed border-gray-400 hover:text-blue-600">{new Intl.NumberFormat("id-ID").format(item.targetNominal)}</span>
-                      )}
-                    </td>
+                {/* BARIS TOTAL KUMULATIF */}
+                <tr className="bg-[#F2F2F7] font-black text-gray-900 border-t-2 text-sm">
+                  <td className="px-6 py-4 border-r text-left">Total Kumulatif</td>
+                  <td className="px-4 py-4 border-r">{totalTargetUser}</td>
+                  <td className="px-6 py-4 border-r text-center">{new Intl.NumberFormat("id-ID").format(totalTargetNominal)}</td>
+                  <td className="px-4 py-4 border-r text-center">{totalRealisasiUser}</td>
+                  <td className="px-6 py-4 border-r text-center">{formatRupiahSakti(totalRealisasiOmset)}</td>
+                  <td className="px-4 py-4 border-r text-center">{totalRealisasiUser - totalTargetUser}</td>
+                  
+                  {filterMingguan === "All" ? (
+                    <>
+                      <td className="px-4 py-4 border-r text-center">{grandPctUser}%</td>
+                      <td className="px-4 py-4 border-r text-center">{grandPctOmset}%</td>
+                      <td className="px-4 py-4 border-r text-center"></td>
+                      <td className="px-4 py-4 text-center"></td>
+                    </>
+                  ) : (
+                    <>
+                      <td className="px-2 py-4 border-r bg-gray-200/50 text-center text-blue-700">
+                        {dataTargetFinal.reduce((sum: number, item: any) => sum + dapatkanDataMingguAktif(item).user, 0)}
+                      </td>
+                      <td className="px-4 py-4 bg-gray-200/50 text-center text-blue-700">
+                        {formatRupiahSakti(dataTargetFinal.reduce((sum: number, item: any) => sum + dapatkanDataMingguAktif(item).omset, 0))}
+                      </td>
+                    </>
+                  )}
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
-                    <td className="px-4 py-4 border-r text-center text-gray-700">{item.realisasiUser}</td>
-                    <td className="px-6 py-4 border-r text-center text-gray-700">{formatRupiahSakti(item.realisasiOmset)}</td>
+          {/* Tabel baru */}
+          <div className="min-w-full min-h-80 overflow-x-auto border border-[#E5E5EA] rounded-2xl bg-white shadow-sm p-6">
+            {dataTargetFinal.map((item: any, idx) => {
+              const mingguAktif = dapatkanDataMingguAktif(item);
+              const selisihUser = item.realisasiUser - item.targetUser;
+              
+              const pctUser = item.targetUser > 0 ? Math.round((item.realisasiUser / item.targetUser) * 100) : 0;
+              const pctOmset = item.targetNominal > 0 ? Math.round((item.realisasiOmset / item.targetNominal) * 100) : 0;
 
-                    <td className={`px-4 py-4 border-r text-center font-semibold ${selisihUser < 0 ? "text-red-600" : "text-emerald-600"}`}>
-                      {selisihUser}
-                    </td>
-
-                    {filterMingguan === "All" ? (
-                      <>
-                        <td className="px-4 py-4 border-r text-center text-gray-700">{pctUser}%</td>
-                        <td className="px-4 py-4 border-r text-center text-gray-700">{pctOmset}%</td>
-                        <td className={`px-4 py-4 border-r text-center ${dapatkanStyleWarnaTeksStatus(pctUser)}`}>
-                          {dapatkanTeksPenilaian(pctUser)}
-                        </td>
-                        <td className={`px-4 py-4 text-center ${dapatkanStyleWarnaTeksStatus(pctOmset)}`}>
-                          {dapatkanTeksPenilaian(pctOmset)}
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-2 py-4 border-r bg-gray-50 text-gray-500 font-medium">{mingguAktif.user}</td>
-                        <td className="px-4 py-4 bg-gray-50 text-gray-400 font-normal">{formatRupiahSakti(mingguAktif.omset)}</td>
-                      </>
-                    )}
-                  </tr>
-                );
-              })}
-
-              {/* BARIS TOTAL KUMULATIF */}
-              <tr className="bg-[#F2F2F7] font-black text-gray-900 border-t-2 text-sm">
-                <td className="px-6 py-4 border-r text-left">Total Kumulatif</td>
-                <td className="px-4 py-4 border-r">{totalTargetUser}</td>
-                <td className="px-6 py-4 border-r text-center">{new Intl.NumberFormat("id-ID").format(totalTargetNominal)}</td>
-                <td className="px-4 py-4 border-r text-center">{totalRealisasiUser}</td>
-                <td className="px-6 py-4 border-r text-center">{formatRupiahSakti(totalRealisasiOmset)}</td>
-                <td className="px-4 py-4 border-r text-center">{totalRealisasiUser - totalTargetUser}</td>
+              return (
                 
-                {filterMingguan === "All" ? (
-                  <>
-                    <td className="px-4 py-4 border-r text-center">{grandPctUser}%</td>
-                    <td className="px-4 py-4 border-r text-center">{grandPctOmset}%</td>
-                    <td className="px-4 py-4 border-r text-center"></td>
-                    <td className="px-4 py-4 text-center"></td>
-                  </>
-                ) : (
-                  <>
-                    <td className="px-2 py-4 border-r bg-gray-200/50 text-center text-blue-700">
-                      {dataTargetFinal.reduce((sum: number, item: any) => sum + dapatkanDataMingguAktif(item).user, 0)}
-                    </td>
-                    <td className="px-4 py-4 bg-gray-200/50 text-center text-blue-700">
-                      {formatRupiahSakti(dataTargetFinal.reduce((sum: number, item: any) => sum + dapatkanDataMingguAktif(item).omset, 0))}
-                    </td>
-                  </>
-                )}
-              </tr>
-            </tbody>
-          </table>
+                <div key={idx} className=" bg-gray-200 rounded-xl m-2 p-6 gap-y-4 flex flex-col border-gray-400 border-2 shadow-xl shadow-gray-200">
+                  <div className="w-full h-full flex justify-between">
+                    <div className="text-2xl text-gray-800 font-black">
+                      {item.name}
+                    </div>
+                    <div className="text-2xl text-gray-600 font-thin">
+                      {bulanFilter}
+                    </div>                  
+                  </div>
+
+                  <div className="flex flex-row gap-x-4 w-full">
+                    <div className="w-full flex flex-col gap-y-4">
+                      <div className="bg-gray-500 w-full p-4 rounded-xl flex flex-col gap-y-4 border-2 border-gray-600 shadow-gray-300 shadow-lg">
+                        <div className="text-xl font-bold text-gray-100 text-center">
+                          Target
+                        </div>
+                        <hr className="border-t border-gray-200 border-2"/> 
+                        <div className="flex w-full justify-between gap-x-4">
+                          <div className="bg-gray-600 rounded-xl p-2 w-full flex-col gap-y-2 flex">
+                            <div className="text-gray-100 font-bold text-lg w-full text-center">Target User</div>
+                            <div className="w-full text-center text-gray-400">{item.targetUser}</div>
+                          </div>
+                          <div className="bg-gray-600 rounded-xl p-2 w-full flex-col gap-y-2 flex">
+                            <div className="text-gray-100 font-bold text-lg w-full text-center">Target Nominal</div>
+                            <div className="w-full text-center text-gray-400">{formatRupiahSakti(item.targetNominal)}</div>
+                          </div>                    
+                        </div>
+                      </div>
+                      <div className="flex flex-row gap-x-4 w-full justify-between">
+                        <div className="bg-blue-300 border-2 border-blue-400 p-4 rounded-xl flex flex-col gap-y-4 shadow-lg shadow-gray-300 w-full">
+                          <div className="text-lg font-bold text-blue-700 w-full text-center">Realisasi</div>
+                          <hr className="border-t border-2 border-blue-700"/>
+                          <div className="w-full flex flex-row justify-between gap-x-4">
+                            <div className="p-2 rounded-lg bg-blue-500 w-full flex flex-col gap-y-2">
+                              <div className="text-gray-100 font-bold text-lg w-full text-center">User</div>
+                              <div className="text-gray-100 text-lg w-full text-center">{item.realisasiUser}</div>
+                            </div>
+                            <div className="p-2 rounded-lg bg-blue-500 w-full flex flex-col gap-y-2">
+                              <div className="text-gray-100 font-bold text-lg w-full text-center">Nominal</div>
+                              <div className="text-gray-100 text-lg w-full text-center">{formatRupiahSakti(item.realisasiOmset)}</div>
+                            </div>                      
+                          </div>
+                        </div>
+                        <div className="bg-red-200 border-2 border-red-300 p-4 rounded-xl flex flex-col gap-y-4 shadow-lg shadow-gray-300 w-full">
+                          <div className="text-lg font-bold text-red-500 w-full text-center">Kekurangan</div>
+                          <hr className="border-t border-2 border-red-500"/>
+                          <div className="w-full flex flex-row justify-between gap-x-4">
+                            <div className="p-2 rounded-lg bg-red-400 w-full flex flex-col gap-y-2">
+                              <div className="text-gray-100 font-bold text-lg w-full text-center">User</div>
+                              <div className="text-gray-100 text-lg w-full text-center">{selisihUser * -1}</div>
+                            </div>
+                            <div className="p-2 rounded-lg bg-red-400 w-full flex flex-col gap-y-2">
+                              <div className="text-gray-100 font-bold text-lg w-full text-center">Nominal</div>
+                              <div className="text-gray-100 text-lg w-full text-center">{formatRupiahSakti(item.targetNominal - item.realisasiOmset)}</div>
+                            </div>                      
+                          </div>                    
+                        </div>                                      
+                      </div> 
+                    </div>
+                    <div className="bg-orange-200 w-full p-4 rounded-xl flex flex-col gap-y-4 border-2 border-orange-400 shadow-gray-300 shadow-lg">
+                      <div className="text-xl font-bold text-orange-700 text-center">
+                        Peforma
+                      </div>
+                      <hr className="border-t border-orange-700 border-2"/> 
+                      <div className="flex w-full justify-between gap-x-4">
+                        <div className="bg-orange-300 rounded-xl p-2 w-full flex-col gap-y-2 flex">
+                          <div className="text-orange-700 font-bold text-lg w-full text-center">Persentase Tercapai User</div>
+                          <div className="w-full text-orange-500 text-4xl h-full flex items-center justify-center">{pctUser}%</div>
+                        </div>
+                        <div className="bg-orange-300 rounded-xl p-2 w-full flex-col gap-y-2 flex">
+                          <div className="text-orange-700 font-bold text-lg w-full text-center">Persentase Target Booking</div>
+                          <div className="w-full text-orange-500 text-4xl h-full flex items-center justify-center">{pctOmset}%</div>
+                        </div>
+                        <div className="bg-orange-300 rounded-xl p-2 w-full flex-col gap-y-2 flex items-center">
+                          <div className="text-orange-700 font-bold text-lg w-full text-center">Penilaian Membership</div>
+                          <div className={`w-full text-center rounded-4xl font-semibold py-2 px-3 max-w-fit ${dapatkanStyleJudulPeforma(pctUser)}`}>{dapatkanJudulPenilaianPeforma(pctUser)}</div>
+                          <div className="w-full text-center text-sm px-4">{dapatkanDeskripsiPenilaianPeforma(pctUser)}</div>
+                        </div>                                            
+                        <div className="bg-orange-300 rounded-xl p-2 w-full flex-col gap-y-2 flex items-center">
+                          <div className="text-orange-700 font-bold text-lg w-full text-center">Penilaian Target</div>
+                          <div className={`w-full text-center rounded-4xl font-semibold py-2 px-3 max-w-fit ${dapatkanStyleJudulPeforma(pctUser)}`}>{dapatkanJudulPenilaianPeforma(pctOmset)}</div>
+                          <div className="w-full text-center text-sm px-4">{dapatkanDeskripsiPenilaianPeforma(pctOmset)}</div>
+                        </div>                    
+                      </div>
+                    </div>                      
+                  </div>               
+                </div>
+              );
+            })}
+          </div>          
         </div>
       )}
 
