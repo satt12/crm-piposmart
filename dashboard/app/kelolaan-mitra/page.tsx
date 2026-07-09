@@ -12,15 +12,12 @@ export default function KelolaanMitraPage() {
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // STATE USER DROPDOWN FILTER UNTUK ADMIN
   const [picFilterAdmin, setPicFilterAdmin] = useState("Semua");
 
-  // STATE USER LOGIN & SESSION
   const [isSessionReady, setIsSessionReady] = useState(false);
-  const [loggedInUser, setLoggedInUser] = useState("Satria");
+  const [loggedInUser, setLoggedInUser] = useState("");
   const [userRole, setUserRole] = useState("Sales");
 
-  // State Mode Filter: "harian" atau "bulanan"
   const [modeFilter, setModeFilter] = useState<"harian" | "bulanan">("harian");
 
   const listBulan = [
@@ -39,13 +36,11 @@ export default function KelolaanMitraPage() {
     return new Date().toISOString().substring(0, 7); 
   };
 
-  // State Filter Tanggal (Harian) & Bulan (Bulanan)
   const [tanggalFilter, setTanggalFilter] = useState(getTodayString());
   const [bulanFilter, setBulanFilter] = useState(getTargetMonthString());
 
-  // Helper nama panggilan pendek
   const dapatkanNamaPanggilan = (namaLengkap: string) => {
-    if (!namaLengkap) return "Satria";
+    if (!namaLengkap) return "";
     const namaKecil = namaLengkap.toLowerCase().trim();
     if (namaKecil.includes("satria")) return "Satria";
     if (namaKecil.includes("boby") || namaKecil.includes("pak boby") || namaKecil.includes("bobbi")) return "Boby";
@@ -57,7 +52,7 @@ export default function KelolaanMitraPage() {
   const initialFormState = () => ({
     tanggalInput: getTodayString(),
     namaMitra: "",
-    picNasabah: typeof window !== "undefined" ? dapatkanNamaPanggilan(localStorage.getItem("user_pic") || "Satria") : "Satria", 
+    picNasabah: typeof window !== "undefined" ? dapatkanNamaPanggilan(localStorage.getItem("user_pic") || "") : "", 
     brandUtama: "",
     kodeOwnerUtama: "",
     kategoriMitra: "Referral",
@@ -71,7 +66,6 @@ export default function KelolaanMitraPage() {
 
   const [formInput, setFormInput] = useState(initialFormState);
 
-  // 🌟 HELPER BARU: Format Angka Menjadi Ribuan Indonesia (Titik)
   const formatRibuanIndo = (nilai: number | string) => {
     if (nilai === undefined || nilai === null || nilai === "") return "";
     const angkaMurni = String(nilai).replace(/\D/g, "");
@@ -81,15 +75,23 @@ export default function KelolaanMitraPage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
+      console.log("[DEBUG SESSION] localStorage.user_pic     =", localStorage.getItem("user_pic"));
+      console.log("[DEBUG SESSION] localStorage.user_role    =", localStorage.getItem("user_role"));
+      console.log("[DEBUG SESSION] localStorage.userRole     =", localStorage.getItem("userRole"));
+      console.log("[DEBUG SESSION] semua key di localStorage =", Object.keys(localStorage));
+
       const savedPic = localStorage.getItem("user_pic");
       const savedRole = localStorage.getItem("user_role") || localStorage.getItem("userRole");
-      let panggilan = "Satria";
-      
+
+      let panggilan = "";
+
       if (savedPic) {
         panggilan = dapatkanNamaPanggilan(savedPic);
         setLoggedInUser(panggilan);
+      } else {
+        console.warn("[DEBUG SESSION] 'user_pic' TIDAK DITEMUKAN di localStorage.");
       }
-      
+
       if (savedRole) {
         setUserRole(savedRole);
       } else {
@@ -105,7 +107,9 @@ export default function KelolaanMitraPage() {
   useEffect(() => {
     if (isModalOpen && !isEditMode) {
       if (typeof window !== "undefined") {
-        const currentPic = dapatkanNamaPanggilan(localStorage.getItem("user_pic") || "Satria");
+        const rawPic = localStorage.getItem("user_pic");
+        console.log("[DEBUG MODAL OPEN] localStorage.user_pic saat modal dibuka =", rawPic);
+        const currentPic = dapatkanNamaPanggilan(rawPic || "");
         setFormInput(prev => ({ 
           ...prev, 
           tanggalInput: getTodayString(),
@@ -157,12 +161,10 @@ export default function KelolaanMitraPage() {
     return Array.from(setPic).sort();
   }, [data]);
 
-  // 🌟 UPDATE: Menangani perubahan input teks dengan filter titik koma otomatis
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     
     if (name === "nominal_komisi") {
-      // Buang semua karakter yang bukan angka
       const murniAngka = value.replace(/\D/g, "");
       setFormInput((prev) => ({
         ...prev,
@@ -190,12 +192,16 @@ export default function KelolaanMitraPage() {
     }));
   };
 
+  const resetForm = () => {
+    setSelectedRecord(null);
+    setIsEditMode(false);
+    setFormInput(initialFormState());
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      
-      // 🌟 UPDATE: Bersihkan string titik sebelum dikirim sebagai number ke backend
       const payload = {
         ...formInput,
         picNasabah: dapatkanNamaPanggilan(formInput.picNasabah),
@@ -245,6 +251,20 @@ export default function KelolaanMitraPage() {
   const handleOpenRowDetail = (item: any) => {
     setSelectedRecord(item);
     setIsEditMode(false); 
+    setFormInput({
+      tanggalInput: item.tanggalInput ? item.tanggalInput.substring(0, 10) : getTodayString(),
+      namaMitra: item.namaMitra || "",
+      picNasabah: dapatkanNamaPanggilan(item.picNasabah || ""),
+      brandUtama: item.brandUtama || "",
+      kodeOwnerUtama: item.kodeOwnerUtama || "",
+      kategoriMitra: item.kategoriMitra || "Referral",
+      paketLangganan: item.paketLangganan || "Bisnis 12 Bulan",
+      statusLangganan: item.statusLangganan || "Berlangganan",
+      buktiFu: item.buktiFu || "",
+      statusInput: item.statusInput || "Done",
+      nominal_komisi: item.nominal_komisi !== undefined ? String(item.nominal_komisi).replace(/\D/g, "") : "",
+      status_komisi: item.status_komisi || "Pending"
+    });
     setIsModalOpen(true);
   };
 
@@ -262,7 +282,6 @@ export default function KelolaanMitraPage() {
       statusLangganan: selectedRecord.statusLangganan || "Berlangganan",
       buktiFu: selectedRecord.buktiFu || "",
       statusInput: selectedRecord.statusInput || "Done",
-      // Pastikan diekstrak sebagai angka murni
       nominal_komisi: selectedRecord.nominal_komisi !== undefined ? String(selectedRecord.nominal_komisi).replace(/\D/g, "") : "",
       status_komisi: selectedRecord.status_komisi || "Pending"
     });
@@ -311,12 +330,6 @@ export default function KelolaanMitraPage() {
       console.error("Gagal melakukan proses penulisan file Excel:", error);
       alert("Terjadi gangguan teknis saat mengunduh dokumen Excel.");
     }
-  };
-
-  const resetForm = () => {
-    setSelectedRecord(null);
-    setIsEditMode(false);
-    setFormInput(initialFormState());
   };
 
   const getStatusLanggananStyle = (status: string) => {
@@ -374,22 +387,31 @@ export default function KelolaanMitraPage() {
         <div>
           <h1 className="text-2xl font-black tracking-tight text-[#1D1D1F]">Data Kelolaan Mitra</h1>
           <p className="text-xs text-gray-500 mt-0.5 font-medium">Monitoring integrasi referral nasabah PT PIPOSMART DIGITAL INDONESIA.</p>
-          <div className="text-xs text-gray-400 font-bold mt-1">
-            Logged in: <span className="text-[#007AFF]">👤 {isSessionReady ? loggedInUser : "Loading..."}</span>
+          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1.5">
+            <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            Logged in: <span className="text-[#007AFF] font-black">{isSessionReady ? loggedInUser : "Loading..."}</span>
           </div>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button 
             onClick={handleExportExcel}
-            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm cursor-pointer flex items-center gap-1"
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm cursor-pointer flex items-center gap-1.5"
           >
-            📥 Export Excel
+            <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            Export Excel
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="px-5 py-2.5 bg-[#007AFF] text-white rounded-xl font-bold text-xs shadow-md hover:bg-[#0062CC] transition flex items-center gap-2 cursor-pointer"
+            className="px-5 py-2.5 bg-[#007AFF] text-white rounded-xl font-bold text-xs shadow-md hover:bg-[#0062CC] transition flex items-center gap-1.5 cursor-pointer"
           >
-            <span>➕</span> Record Kelolaan Baru
+            <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            Record Kelolaan Baru
           </button>
         </div>
       </div>
@@ -398,7 +420,11 @@ export default function KelolaanMitraPage() {
       <div className="bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
-            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">🔍</span>
+            <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
+              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </span>
             <input 
               type="text" placeholder="Cari Brand, Owner, atau Nama PIC..." value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -406,10 +432,12 @@ export default function KelolaanMitraPage() {
             />
           </div>
 
-          {/* DROPDOWN FILTER PIC SALES UNTUK ADMIN */}
           {isSessionReady && userRole.toLowerCase() === "admin" && (
             <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">👤 PIC:</span>
+              <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">PIC:</span>
               <select
                 value={picFilterAdmin} onChange={(e) => setPicFilterAdmin(e.target.value)}
                 className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
@@ -429,6 +457,9 @@ export default function KelolaanMitraPage() {
         </div>
 
         <div className="flex items-center justify-end gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-gray-200 w-full sm:w-auto">
+          <svg className="w-3.5 h-3.5 text-gray-500 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
           <span className="text-[11px] font-bold text-gray-400 uppercase whitespace-nowrap px-1">
             {modeFilter === "harian" ? "Rekapan Tanggal:" : "Rekapan Bulan:"}
           </span>
@@ -446,7 +477,10 @@ export default function KelolaanMitraPage() {
           <div className="text-center py-24 font-bold text-sm text-gray-400 animate-pulse">Menghubungkan ke enkripsi crm...</div>
         ) : filteredData.length === 0 ? (
           <div className="text-center py-20 bg-white border border-dashed rounded-3xl text-gray-400 text-xs font-medium">
-            📭 Tidak ada data rekapan ditemukan.
+            <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.514 13H4" />
+            </svg>
+            Tidak ada data rekapan ditemukan.
           </div>
         ) : (
           <div className="bg-white p-2 border border-gray-200/70 rounded-3xl shadow-sm">
@@ -489,7 +523,12 @@ export default function KelolaanMitraPage() {
           <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl space-y-4 border border-gray-100 max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center border-b pb-3">
               <div>
-                <h2 className="text-lg font-black tracking-tight text-gray-800">{selectedRecord && !isEditMode ? "📋 Rincian Kelolaan Kemitraan" : isEditMode ? "✏️ Edit Hubungan Kemitraan" : "➕ Record Kelolaan Kemitraan Baru"}</h2>
+                <h2 className="text-lg font-black tracking-tight text-gray-800 flex items-center gap-1.5">
+                  <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {selectedRecord && !isEditMode ? "Rincian Kelolaan Kemitraan" : isEditMode ? "Edit Hubungan Kemitraan" : "Record Kelolaan Kemitraan Baru"}
+                </h2>
                 <p className="text-[11px] text-gray-400 font-medium">Manajemen data kemitraan operasional terpadu.</p>
               </div>
               <button type="button" onClick={() => setIsModalOpen(false)} className="text-gray-400 p-1.5 hover:bg-gray-100 rounded-xl cursor-pointer">✕</button>
@@ -510,64 +549,90 @@ export default function KelolaanMitraPage() {
                 </div>
               </div>
 
-              <div className="bg-gray-50/50 border p-4 rounded-2xl space-y-3">
-                <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2.5 py-0.5 rounded-md uppercase tracking-wider">Blok Parameter Kelolaan Mitra Utama</span>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-gray-600">Nama Mitra Utama</label>
-                    {selectedRecord && !isEditMode ? (
-                      <input type="text" value={selectedRecord.namaMitra} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-gray-100/70 text-gray-800" />
-                    ) : (
-                      <select name="namaMitra" value={formInput.namaMitra} onChange={handleMitraSelect} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-white text-gray-800 focus:outline-none cursor-pointer" required>
-                        <option value="">-- Pilih Mitra --</option>
-                        {listMitraMaster.map((m: any, idx) => (
-                          <option key={idx} value={m.owner || m.ownerMitra}>{m.owner || m.ownerMitra}</option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-gray-600">Nama Brand / Badan Usaha</label>
-                    <input type="text" name="brandUtama" placeholder="Otomatis mengikuti mitra" value={selectedRecord && !isEditMode ? selectedRecord.brandUtama : formInput.brandUtama} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-gray-100/70 text-gray-800 focus:outline-none" required />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-gray-600">Kode Owner Mitra</label>
-                    <input type="text" name="kodeOwnerUtama" placeholder="Otomatis mengikuti mitra" value={selectedRecord && !isEditMode ? selectedRecord.kodeOwnerUtama : formInput.kodeOwnerUtama} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-gray-100/70 text-gray-800 focus:outline-none" />
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-gray-50/50 p-4 rounded-2xl border">
+                <div className="flex flex-col gap-1.5">
+                  <label>Kategori Utama</label>
+                  {selectedRecord && !isEditMode ? (
+                    <input type="text" value={formInput.kategoriMitra} disabled className="border p-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 focus:outline-none" />
+                  ) : (
+                    <select name="kategoriMitra" value={formInput.kategoriMitra} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] focus:outline-none">
+                      <option value="Referral">Referral</option>
+                      <option value="Afiliasi">Afiliasi</option>
+                      <option value="Franchise">Franchise</option>
+                    </select>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label>Nama Mitra Owner (Master Sync)</label>
+                  {selectedRecord && !isEditMode ? (
+                    <input type="text" value={formInput.namaMitra} disabled className="border p-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 focus:outline-none" />
+                  ) : (
+                    <select name="namaMitra" value={formInput.namaMitra} onChange={handleMitraSelect} className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] focus:outline-none cursor-pointer">
+                      <option value="">-- Hubungkan Owner Mitra --</option>
+                      {listMitraMaster.map((mitra: any) => {
+                        const namaNama = mitra.owner || mitra.ownerMitra || "";
+                        return (
+                          <option key={mitra.id || mitra.ID || namaNama} value={namaNama}>
+                            {namaNama}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  )}
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label>Kode Owner</label>
+                  <input type="text" name="kodeOwnerUtama" placeholder="Auto sync" value={formInput.kodeOwnerUtama} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 cursor-not-allowed focus:outline-none" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label>Kategori Kemitraan</label>
-                  {selectedRecord && !isEditMode ? (
-                    <input type="text" value={selectedRecord.kategoriMitra} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-gray-100/70 text-gray-500" />
-                  ) : (
-                    <select name="kategoriMitra" value={formInput.kategoriMitra} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-white text-gray-800 focus:outline-none">
-                      <option value="Referral">Referral</option>
-                      <option value="Corporate Paket Bisnis">Corporate Paket Bisnis</option>
-                    </select>
-                  )}
+                  <label>Nama Brand Terpilih</label>
+                  <input type="text" name="brandUtama" value={formInput.brandUtama} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-500 bg-gray-100 cursor-not-allowed focus:outline-none" />
                 </div>
                 <div className="flex flex-col gap-1.5">
                   <label>Paket Langganan</label>
                   {selectedRecord && !isEditMode ? (
-                    <input type="text" value={selectedRecord.paketLangganan} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-gray-100/70 text-gray-500" />
+                    <input type="text" value={formInput.paketLangganan} disabled className="border p-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 focus:outline-none" />
                   ) : (
-                    <select name="paketLangganan" value={formInput.paketLangganan} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-white text-gray-800 focus:outline-none">
+                    <select name="paketLangganan" value={formInput.paketLangganan} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] focus:outline-none">
                       <option value="Bisnis 12 Bulan">Bisnis 12 Bulan</option>
-                      <option value="Bisnis 6 Bulan">Bisnis 6 Bulan</option>
-                      <option value="Bisnis 1 Bulan">Bisnis 1 Bulan</option>
-                      <option value="Basic 1 Bulan">Basic 1 Bulan</option>
+                      <option value="Pro 12 Bulan">Pro 12 Bulan</option>
+                      <option value="Lite 6 Bulan">Lite 6 Bulan</option>
+                    </select>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-blue-50/10 p-4 rounded-2xl border border-dashed">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-blue-900">Nominal Komisi Pencairan</label>
+                  <input 
+                    type="text" name="nominal_komisi" placeholder="Contoh: 500.000" 
+                    value={formatRibuanIndo(formInput.nominal_komisi)} onChange={handleInputChange} 
+                    disabled={selectedRecord && !isEditMode} 
+                    className="border p-2.5 rounded-xl text-sm font-bold bg-white text-gray-800 disabled:bg-gray-100 focus:outline-none" 
+                    required 
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-blue-900">Status Pembayaran</label>
+                  {selectedRecord && !isEditMode ? (
+                    <input type="text" value={formInput.status_komisi === "Selesai" ? "Cair" : "Pending"} disabled className="border p-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 focus:outline-none" />
+                  ) : (
+                    <select name="status_komisi" value={formInput.status_komisi} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] focus:outline-none">
+                      <option value="Pending">Pending</option>
+                      <option value="Selesai">Cair</option>
                     </select>
                   )}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label>Status Langganan</label>
+                  <label className="text-blue-900">Status Langganan</label>
                   {selectedRecord && !isEditMode ? (
-                    <input type="text" value={selectedRecord.statusLangganan} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-gray-100/70 text-gray-500" />
+                    <input type="text" value={formInput.statusLangganan} disabled className="border p-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 focus:outline-none" />
                   ) : (
-                    <select name="statusLangganan" value={formInput.statusLangganan} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-semibold bg-white text-gray-800 focus:outline-none">
+                    <select name="statusLangganan" value={formInput.statusLangganan} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] focus:outline-none">
                       <option value="Berlangganan">Berlangganan</option>
                       <option value="Follow Up">Follow Up</option>
                       <option value="Top Up">Top Up</option>
@@ -577,49 +642,35 @@ export default function KelolaanMitraPage() {
                 </div>
               </div>
 
-              <div className="p-4 border border-dashed border-amber-200 bg-amber-50/20 rounded-2xl space-y-3">
-                <span className="text-[10px] font-black text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-md uppercase tracking-wider">Alokasi Fee Insentif Komisi Referral</span>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-amber-900">Nominal Komisi (Rp)</label>
-                    {/* 🌟 UPDATE VIEW FORM: Menggunakan tipe text & helper formatRibuanIndo */}
-                    <input 
-                      type="text" 
-                      name="nominal_komisi" 
-                      placeholder="Contoh: 250.000" 
-                      value={selectedRecord && !isEditMode ? formatRibuanIndo(selectedRecord.nominal_komisi) : formatRibuanIndo(formInput.nominal_komisi)} 
-                      onChange={handleInputChange} 
-                      disabled={selectedRecord && !isEditMode} 
-                      className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white disabled:bg-gray-100/70 focus:outline-none" 
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-amber-900">Status Pencairan Komisi</label>
-                    {selectedRecord && !isEditMode ? (
-                      <input type="text" value={selectedRecord.status_komisi === "Selesai" ? "Cair" : "Pending"} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-gray-100/70 text-gray-500" />
-                    ) : (
-                      <select name="status_komisi" value={formInput.status_komisi} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold bg-white text-gray-800 focus:outline-none">
-                        <option value="Pending">Pending (Ditahan)</option>
-                        <option value="Selesai">Selesai (Sudah Cair)</option>
-                      </select>
-                    )}
-                  </div>
-                </div>
+              <div className="flex flex-col gap-1.5">
+                <label>Bukti Screen Shoot / Catatan Link File</label>
+                <input type="text" name="buktiFu" placeholder="Contoh: https://drive.google.com/drive/xxx" value={formInput.buktiFu} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border p-2.5 rounded-xl text-sm font-medium focus:outline-none disabled:bg-gray-100 placeholder:font-normal placeholder:text-gray-300" />
               </div>
 
-              <div className="flex justify-between items-center pt-4 border-t border-gray-100">
+              {/* CONTROLS FOOTER */}
+              <div className="flex justify-between items-center pt-4 border-t border-gray-100 gap-2">
                 <div>
                   {selectedRecord && !isEditMode && (
                     <div className="flex gap-2">
-                      <button type="button" onClick={handleActivateEditMode} className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold hover:bg-amber-100 text-xs transition cursor-pointer">✏️ Ubah / Edit</button>
-                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-100 text-xs transition cursor-pointer">🗑️ Hapus</button>
+                      <button type="button" onClick={handleActivateEditMode} className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold text-xs transition cursor-pointer flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Ubah / Edit
+                      </button>
+                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs transition cursor-pointer flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Hapus
+                      </button>
                     </div>
                   )}
                 </div>
                 <div className="flex gap-3">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 text-sm cursor-pointer">Selesai</button>
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 text-sm cursor-pointer">{selectedRecord && !isEditMode ? "Selesai" : "Batal"}</button>
                   {(isEditMode || !selectedRecord) && (
-                    <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-sm shadow-md cursor-pointer">Simpan Record</button>
+                    <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-sm shadow-md cursor-pointer">{isEditMode ? "Simpan Perubahan" : "Simpan"}</button>
                   )}
                 </div>
               </div>

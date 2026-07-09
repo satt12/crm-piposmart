@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 
 // 1. Master Data Jobdesk
 const initialJobdeskMaster = [
@@ -61,8 +61,9 @@ export default function JobdeskDailyPage() {
   const [editingValue, setEditingValue] = useState<string>("");
   const [isMounted, setIsMounted] = useState(false);
 
-  // 🌟 STATE USER SESSION: Mencegah eror hydration SSR Next.js
+  // STATE USER SESSION & ROLE: Mencegah eror hydration SSR Next.js
   const [loggedInUser, setLoggedInUser] = useState("Satria");
+  const [userRole, setUserRole] = useState("Sales");
 
   // Ambil data dari local storage saat pertama kali dimuat
   useEffect(() => {
@@ -70,8 +71,19 @@ export default function JobdeskDailyPage() {
     
     if (typeof window !== "undefined") {
       const savedPic = localStorage.getItem("user_pic");
+      const savedRole = localStorage.getItem("user_role") || localStorage.getItem("userRole");
+      
+      let panggilan = "Satria";
       if (savedPic) {
-        setLoggedInUser(dapatkanNamaPanggilan(savedPic));
+        panggilan = dapatkanNamaPanggilan(savedPic);
+        setLoggedInUser(panggilan);
+      }
+
+      if (savedRole) {
+        setUserRole(savedRole);
+      } else {
+        const namaBersih = panggilan.toLowerCase();
+        setUserRole(namaBersih === "satria" || namaBersih === "boby" ? "Admin" : "Sales");
       }
     }
 
@@ -141,66 +153,87 @@ export default function JobdeskDailyPage() {
   };
 
   if (!isMounted) {
-    return <div className="max-w-6xl mx-auto p-12 text-center font-medium text-gray-400">Memuat Lembar Kerja...</div>;
+    return <div className="max-w-7xl mx-auto p-12 text-center font-medium text-gray-400">Memuat Lembar Kerja...</div>;
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 py-4">
+    <div className="max-w-7xl mx-auto space-y-6 py-4 bg-[#FAF9F6] min-h-screen">
       {/* Header Elemen */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-[#E5E5EA] pb-5 gap-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-gray-200 pb-5 gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-[#1D1D1F]">Jobdesk Daily</h1>
-          {/* 🌟 FIXED DYNAMIC HEADER: Murni hanya menyisakan nama panggilan pendek dinamis */}
-          <p className="text-sm text-[#86868B] mt-1 font-medium">
-            Lembar kerja digital interaktif Tim Sales. <span className="text-[#007AFF] font-bold">👤 {loggedInUser}</span>
-          </p>
+          <h1 className="text-3xl font-black tracking-tight text-gray-800">Jobdesk Daily</h1>
+          <div className="text-sm text-gray-500 mt-1 font-medium flex items-center gap-1.5 flex-wrap">
+            <span>Lembar kerja digital interaktif Tim Sales.</span>
+            
+            {/* 🌟 FIXED CLEAN: Hanya 1 Ikon SVG terbaru & nama user panggilan */}
+            <span className="flex items-center gap-1 text-gray-400 font-bold ml-1">
+              <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              <span className="text-gray-700 font-black">{loggedInUser}</span>
+            </span>
+
+            {/* BADGE TAG ROLE DINAMIS */}
+            {userRole.toLowerCase() === "admin" ? (
+              <span className="text-[10px] bg-blue-50 text-[#007AFF] border border-blue-200 px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-0.5">
+                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
+                </svg>
+                Admin
+              </span>
+            ) : (
+              <span className="text-[10px] bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
+                Sales Tim
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Kalender Real-Time */}
-        <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-[#E8E8ED] shadow-[0_4px_12px_rgba(0,0,0,0.01)]">
-          <label className="text-xs font-bold text-[#48484A] uppercase whitespace-nowrap">Pilih Hari:</label>
+        <div className="flex items-center gap-3 bg-white px-4 py-2 rounded-2xl border border-gray-200 shadow-sm">
+          <svg className="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+          <label className="text-xs font-bold text-gray-600 uppercase whitespace-nowrap">Pilih Hari:</label>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="text-[13px] font-semibold text-[#1D1D1F] bg-[#F5F5F7] px-3 py-1.5 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-[#007AFF] transition-all"
+            className="text-[13px] font-semibold text-gray-700 bg-gray-50 px-3 py-1.5 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-[#007AFF] transition-all uppercase cursor-pointer"
           />
         </div>
       </div>
 
       {/* Tabel Ceklist Jobdesk Utama */}
-      <div className="bg-white rounded-2xl border border-[#E8E8ED] shadow-[0_4px_12px_rgba(0,0,0,0.01)] overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#F5F5F7] border-b border-[#E8E8ED]">
-                <th className="px-6 py-3.5 text-[11px] font-bold text-[#86868B] uppercase w-12 text-center select-none">No</th>
-                <th className="px-6 py-3.5 text-[11px] font-bold text-[#86868B] uppercase select-none">Aktivitas / Jobdesk Tim Sales</th>
-                <th className="px-6 py-3.5 text-[11px] font-bold text-[#86868B] uppercase w-44 text-center select-none">Target</th>
-                <th className="px-6 py-3.5 text-[11px] font-bold text-[#86868B] uppercase w-40 text-center select-none">Beri Ceklist</th>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="px-6 py-3.5 text-[11px] font-bold text-gray-400 uppercase w-12 text-center select-none">No</th>
+                <th className="px-6 py-3.5 text-[11px] font-bold text-gray-400 uppercase select-none">Aktivitas / Jobdesk Tim Sales</th>
+                <th className="px-6 py-3.5 text-[11px] font-bold text-gray-400 uppercase w-44 text-center select-none">Target</th>
+                <th className="px-6 py-3.5 text-[11px] font-bold text-gray-400 uppercase w-40 text-center select-none">Beri Ceklist</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#F2F2F7]">
+            <tbody className="divide-y divide-gray-100">
               {initialJobdeskMaster.map((job, idx) => {
                 const isChecked = currentChecklist[idx];
                 const targetValue = currentDayTargets[job.id] || "";
 
                 return (
-                  <tr key={job.id} className="hover:bg-[#F2F2F7]/40 transition-colors duration-100">
-                    {/* No */}
-                    <td className="px-6 py-4 text-[13px] font-bold text-[#86868B] text-center select-none">{job.id}</td>
+                  <tr key={job.id} className="hover:bg-gray-50/50 transition-colors duration-100">
+                    <td className="px-6 py-4 text-[13px] font-bold text-gray-400 text-center select-none">{job.id}</td>
                     
-                    {/* Nama Jobdesk */}
                     <td 
-                      className="px-6 py-4 text-[13px] font-semibold leading-relaxed text-[#1D1D1F] cursor-pointer"
+                      className="px-6 py-4 text-[13px] font-semibold leading-relaxed text-gray-700 cursor-pointer"
                       onClick={() => handleCheckboxChange(idx)}
                     >
-                      <span className={isChecked ? "line-through text-[#86868B] font-medium transition-all" : "text-[#1D1D1F]"}>
+                      <span className={isChecked ? "line-through text-gray-400 font-medium transition-all" : "text-gray-700"}>
                         {job.task}
                       </span>
                     </td>
                     
-                    {/* Kolom Target Editable */}
                     <td className="px-4 py-3 text-[13px] text-center" onClick={(e) => e.stopPropagation()}>
                       {editingId === job.id ? (
                         <div className="flex items-center gap-1.5 justify-center">
@@ -222,12 +255,12 @@ export default function JobdeskDailyPage() {
                         </div>
                       ) : (
                         <div 
-                          className="inline-flex items-center gap-1.5 justify-center group cursor-pointer hover:bg-gray-100/80 px-2.5 py-1 rounded-lg transition-all min-h-[28px] min-w-[60px]"
+                          className="inline-flex items-center gap-1.5 justify-center group cursor-pointer hover:bg-gray-50 px-2.5 py-1 rounded-lg transition-all min-h-[28px] min-w-[60px]"
                           onClick={() => startEditing(job.id, targetValue)}
                           title="Klik untuk isi target"
                         >
                           {targetValue ? (
-                            <span className="bg-[#F5F5F7] px-2.5 py-0.5 rounded-md border border-[#E8E8ED] text-xs font-bold text-[#48484A] group-hover:bg-white transition-colors">
+                            <span className="bg-gray-50 px-2.5 py-0.5 rounded-md border border-gray-200 text-xs font-bold text-gray-600 group-hover:bg-white transition-colors">
                               {targetValue}
                             </span>
                           ) : (
@@ -235,19 +268,20 @@ export default function JobdeskDailyPage() {
                               Tambah +
                             </span>
                           )}
-                          <span className="text-gray-400 opacity-0 group-hover:opacity-100 text-xs transition-opacity">✏️</span>
+                          <svg className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                          </svg>
                         </div>
                       )}
                     </td>
                     
-                    {/* Beri Checklist */}
                     <td className="px-6 py-4 text-center select-none">
                       <label className="inline-flex items-center justify-center cursor-pointer p-1">
                         <input
                           type="checkbox"
                           checked={isChecked || false}
                           onChange={() => handleCheckboxChange(idx)}
-                          className="w-5 h-5 rounded-md border-[#C5C5C7] text-[#007AFF] focus:ring-[#007AFF]/30 focus:ring-2 transition-all cursor-pointer bg-[#F5F5F7]"
+                          className="w-5 h-5 rounded-md border-gray-300 text-[#007AFF] focus:ring-[#007AFF]/30 focus:ring-2 transition-all cursor-pointer bg-gray-50"
                         />
                       </label>
                     </td>
