@@ -105,7 +105,7 @@ export default function SopKelolaanPage() {
           { id: 37, tipe: "chat", label: "3. Chat Engage", keterangan: "Nasabah membalas pesan tapi tidak ada percakapan lanjut (diputuskan sepihak), atau nasabah masih sibuk/sedang di jalan.", urutan: 3 },
           { id: 38, tipe: "chat", label: "4. Chat Interest", keterangan: "Nasabah tertarik dan masuk pembahasan lanjut mengenai penggunaan aplikasi, fitur-fitur, harga berlangganan, atau sudah ada gambaran paket.", urutan: 4 },
           { id: 39, tipe: "chat", label: "5. Chat Prospek", keterangan: "Nasabah potensi dan sudah sampai tahap training demo aplikasi melalui online meeting maupun visit ke laundry (Batam).", urutan: 5 },
-          { id: 40, tipe: "chat", label: "6. Chat Uninterest", keterangan: "Nasabah tidak tertarik setelah ada percakapan lanjut (berat di harga, pakai aplikasi lain, atau fitur tidak sesuai).", urutan: 6 },
+          { id: 40, tipe: "chat", label: "6. Chat Uninterest", fontStyle: "normal", keterangan: "Nasabah tidak tertarik setelah ada percakapan lanjut (berat di harga, pakai aplikasi lain, atau fitur tidak sesuai).", urutan: 6 },
           { id: 41, tipe: "chat", label: "7. No Chat", keterangan: "Sales/CS tidak ada chat nasabah.", urutan: 7 }
         ]);
 
@@ -195,7 +195,6 @@ export default function SopKelolaanPage() {
     }
   };
 
-  // Helper Ikon SVG Tambah Minimalis
   const SvgPlusIcon = () => (
     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -216,14 +215,14 @@ export default function SopKelolaanPage() {
           {activeTab === "klasifikasi" ? (
             <>
               <button onClick={() => handleAddItem("potensi")} className="px-3 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl font-bold text-xs hover:bg-emerald-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Potensi</button>
-              <button onClick={() => handleAddItem("wajib-bisnis")} className="px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-200 rounded-xl font-bold text-xs hover:bg-blue-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Wajib Bisnis</button>
+              <button onClick={() => handleAddItem("wajib-bisnis")} className="px-3 py-1.5 bg-red-50 text-[#C92C1E] border border-red-200 rounded-xl font-bold text-xs hover:bg-red-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Wajib Bisnis</button>
               <button onClick={() => handleAddItem("tidak-potensi")} className="px-3 py-1.5 bg-rose-50 text-rose-700 border border-rose-200 rounded-xl font-bold text-xs hover:bg-rose-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Tidak Potensi</button>
               <button onClick={() => handleAddItem("todo-sales")} className="px-3 py-1.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-xl font-bold text-xs hover:bg-amber-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Task Sales</button>
               <button onClick={() => handleAddItem("todo-cs")} className="px-3 py-1.5 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl font-bold text-xs hover:bg-indigo-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Task CS</button>
             </>
           ) : (
             <>
-              <button onClick={() => handleAddItem("call")} className="px-3 py-1.5 bg-blue-50 text-[#007AFF] border border-blue-200 rounded-xl font-bold text-xs hover:bg-blue-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Modul Call</button>
+              <button onClick={() => handleAddItem("call")} className="px-3 py-1.5 bg-red-50 text-[#C92C1E] border border-red-200 rounded-xl font-bold text-xs hover:bg-red-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Modul Call</button>
               <button onClick={() => handleAddItem("chat")} className="px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-200 rounded-xl font-bold text-xs hover:bg-purple-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Modul Chat</button>
               <button onClick={() => handleAddItem("reason")} className="px-3 py-1.5 bg-gray-50 text-gray-700 border border-gray-200/80 rounded-xl font-bold text-xs hover:bg-gray-100 transition shadow-sm flex items-center gap-1 cursor-pointer"><SvgPlusIcon /> Reason Block</button>
             </>
@@ -235,13 +234,13 @@ export default function SopKelolaanPage() {
       <div className="flex bg-gray-100 p-1 rounded-xl w-fit border border-gray-200/60">
         <button
           onClick={() => { setActiveTab("klasifikasi"); setEditingKey(null); }}
-          className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all cursor-pointer ${activeTab === "klasifikasi" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
+          className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all cursor-pointer ${activeTab === "klasifikasi" ? "bg-white text-[#C92C1E] shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
         >
           Klasifikasi Nasabah & To Do List
         </button>
         <button
           onClick={() => { setActiveTab("modul"); setEditingKey(null); }}
-          className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all cursor-pointer ${activeTab === "modul" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
+          className={`px-4 py-1.5 text-[13px] font-semibold rounded-lg transition-all cursor-pointer ${activeTab === "modul" ? "bg-white text-[#C92C1E] shadow-sm" : "text-gray-500 hover:text-gray-800"}`}
         >
           Modul Call & Chat CS
         </button>
@@ -290,15 +289,15 @@ export default function SopKelolaanPage() {
                       })}
                     </ul>
                     
-                    <div className="bg-gray-50 p-4 rounded-xl border border-gray-200/60 mt-4">
-                      <span className="text-[11px] font-black text-[#007AFF] uppercase block mb-2">Untuk nasabah potensi, tim bisnis wajib:</span>
+                    <div className="bg-red-50/40 p-4 rounded-xl border border-red-100 mt-4">
+                      <span className="text-[11px] font-black text-[#C92C1E] uppercase block mb-2">Untuk nasabah potensi, tim bisnis wajib:</span>
                       <ul className="space-y-1.5 text-[12px] text-gray-600 font-semibold leading-relaxed">
                         {kewajibanBisnis.map((item, index) => {
                           const key = `wajib-${index}`;
                           return (
                             <li key={item.id} className="flex items-start justify-between gap-2 group/wajib">
                               <div className="flex items-start gap-2 flex-1">
-                                <span className="text-[#007AFF] shrink-0">{item.label}</span>
+                                <span className="text-[#C92C1E] shrink-0">{item.label}</span>
                                 {editingKey === key ? (
                                   <input type="text" value={item.keterangan} onChange={(e) => { const u = [...kewajibanBisnis]; u[index].keterangan = e.target.value; setKewajibanBisnis(u); }} onBlur={() => { setEditingKey(null); handleLiveUpdateBackend(item.id, "keterangan", item.keterangan); }} onKeyDown={handleKeyDownEnter} autoFocus className="w-full border px-1 rounded focus:outline-none bg-white text-gray-700" />
                                 ) : (
@@ -371,7 +370,7 @@ export default function SopKelolaanPage() {
                       return (
                         <div key={item.id} className="py-2.5 flex items-start justify-between gap-3 group/row text-[12.5px] font-semibold text-gray-600 hover:bg-gray-50 rounded-lg transition px-1">
                           <div className="flex items-start gap-2.5 flex-1">
-                            <span className="font-bold text-blue-600 shrink-0">{item.label}</span>
+                            <span className="font-bold text-[#C92C1E] shrink-0">{item.label}</span>
                             {editingKey === keyDesc ? (
                               <textarea value={item.keterangan} onChange={(e) => { const u = [...todoSales]; u[index].keterangan = e.target.value; setTodoSales(u); }} onBlur={() => { setEditingKey(null); handleLiveUpdateBackend(item.id, "keterangan", item.keterangan); }} onKeyDown={handleKeyDownEnter} autoFocus className="w-full border px-2 py-0.5 rounded text-xs focus:outline-none bg-white text-gray-700 resize-none" rows={2} />
                             ) : (
@@ -400,7 +399,7 @@ export default function SopKelolaanPage() {
                       return (
                         <div key={item.id} className="py-2.5 flex items-start justify-between gap-3 group/row text-[12.5px] font-semibold text-gray-600 hover:bg-gray-50 rounded-lg transition px-1">
                           <div className="flex items-start gap-2.5 flex-1">
-                            <span className="font-bold text-blue-600 shrink-0">{item.label}</span>
+                            <span className="font-bold text-[#C92C1E] shrink-0">{item.label}</span>
                             {editingKey === keyDesc ? (
                               <textarea value={item.keterangan} onChange={(e) => { const u = [...todoCs]; u[index].keterangan = e.target.value; setTodoCs(u); }} onBlur={() => { setEditingKey(null); handleLiveUpdateBackend(item.id, "keterangan", item.keterangan); }} onKeyDown={handleKeyDownEnter} autoFocus className="w-full border px-2 py-0.5 rounded text-xs focus:outline-none bg-white text-gray-700 resize-none" rows={2} />
                             ) : (
@@ -440,7 +439,7 @@ export default function SopKelolaanPage() {
                       return (
                         <div key={item.id} className="p-4 flex flex-col sm:flex-row items-start justify-between gap-4 group/row hover:bg-gray-50 rounded-lg transition">
                           <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-[13px] flex-1 w-full">
-                            <div className="sm:w-1/3 shrink-0 font-bold text-[#007AFF]">
+                            <div className="sm:w-1/3 shrink-0 font-bold text-[#C92C1E]">
                               {editingKey === keyLabel ? (
                                 <input type="text" value={item.label} onChange={(e) => { const u = [...modulCall]; u[index].label = e.target.value; setModulCall(u); }} onBlur={() => { setEditingKey(null); handleLiveUpdateBackend(item.id, "label", item.label); }} onKeyDown={handleKeyDownEnter} autoFocus className="w-full border px-1 rounded text-xs focus:outline-none bg-white text-gray-700" />
                               ) : (
@@ -480,7 +479,7 @@ export default function SopKelolaanPage() {
                       return (
                         <div key={item.id} className="p-4 flex flex-col sm:flex-row items-start justify-between gap-4 group/row hover:bg-gray-50 rounded-lg transition">
                           <div className="flex flex-col sm:flex-row gap-2 sm:gap-6 text-[13px] flex-1 w-full">
-                            <div className="sm:w-1/3 shrink-0 font-bold text-[#007AFF]">
+                            <div className="sm:w-1/3 shrink-0 font-bold text-[#C92C1E]">
                               {editingKey === keyLabel ? (
                                 <input type="text" value={item.label} onChange={(e) => { const u = [...modulChat]; u[index].label = e.target.value; setModulChat(u); }} onBlur={() => { setEditingKey(null); handleLiveUpdateBackend(item.id, "label", item.label); }} onKeyDown={handleKeyDownEnter} autoFocus className="w-full border px-1 rounded text-xs focus:outline-none bg-white text-gray-700" />
                               ) : (
@@ -512,7 +511,6 @@ export default function SopKelolaanPage() {
               {/* Alasan Pemblokiran */}
               <div className="bg-white rounded-2xl border border-gray-200/80 shadow-sm p-6">
                 <h3 className="text-base font-black text-rose-800 flex items-center gap-1.5 mb-3">
-                  {/* 🌟 UPDATE ICON: SVG Peringatan / Segitiga Eksklamasi */}
                   <svg className="w-4 h-4 text-rose-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                   </svg>

@@ -1,25 +1,46 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
+import DataTable from "../components/DataTable";
 
-export default function ReportPage() {
+export default function ListMitraPage() {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false); 
   const [selectedRecord, setSelectedRecord] = useState<any | null>(null); 
   const [searchTerm, setSearchTerm] = useState("");
+  const [picFilter, setPicFilter] = useState("All");
 
-  // STATE USER LOGIN
+  // STATE USER LOGIN & SESSION (Aman dari Eror Hydration SSR)
   const [isSessionReady, setIsSessionReady] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState("Satria");
   const [userRole, setUserRole] = useState("Sales");
+
+  // State Mode Filter: "harian" atau "bulanan"
   const [modeFilter, setModeFilter] = useState<"harian" | "bulanan">("harian");
 
-  // STATE FILTER PIC KHUSUS ADMIN
-  const [picFilterAdmin, setPicFilterAdmin] = useState("Semua");
+  const listBulan = [
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember", "Nihil"
+  ];
 
-  // Helper untuk membersihkan dan menstandarkan nama panggilan pendek
+  const getTodayString = () => {
+    const tglLokal = new Date();
+    const offset = tglLokal.getTimezoneOffset();
+    const tglDisesuaikan = new Date(tglLokal.getTime() - (offset * 60 * 1000));
+    return tglDisesuaikan.toISOString().substring(0, 10);
+  };
+
+  const getTargetMonthString = () => {
+    return new Date().toISOString().substring(0, 7); 
+  };
+
+  // State Filter Tanggal (Harian) & Bulan (Bulanan)
+  const [tanggalFilter, setTanggalFilter] = useState(getTodayString());
+  const [bulanFilter, setBulanFilter] = useState(getTargetMonthString());
+
+  // Helper nama panggilan pendek
   const dapatkanNamaPanggilan = (namaLengkap: string) => {
     if (!namaLengkap) return "Satria";
     const namaKecil = namaLengkap.toLowerCase().trim();
@@ -30,107 +51,117 @@ export default function ReportPage() {
     return namaLengkap.split(" ")[0];
   };
 
-  const getTodayString = () => {
-    const tglLokal = new Date();
-    const offset = tglLokal.getTimezoneOffset();
-    const tglDisesuaikan = new Date(tglLokal.getTime() - (offset * 60 * 1000));
-    return tglDisesuaikan.toISOString().substring(0, 10);
-  };
-
-  const getTargetMonthString = () => new Date().toISOString().substring(0, 7);
-
-  const [filterDate, setFilterDate] = useState(getTodayString());
-  const [filterMonth, setFilterMonth] = useState(getTargetMonthString());
-
+  // FORM FIELD EXCEL MATCH
   const initialFormState = () => ({
-    tanggal: getTodayString(),
-    pic: typeof window !== "undefined" ? dapatkanNamaPanggilan(localStorage.getItem("user_pic") || "Satria") : "Satria", 
-    keterangan: "",
-    responCall: 0,
-    responChat: 0,
-    responMeeting: 0,
-    responVisit: 0,
-    noResponCount: 0,
+    tanggalInput: getTodayString(),
+    kategori: "REFERAL (Berlangganan)",
+    kategoriSub: "Mitra Referral",
+    picNasabah: typeof window !== "undefined" ? dapatkanNamaPanggilan(localStorage.getItem("user_pic") || "Satria") : "Satria", 
+    bulanTerdaftar: listBulan[new Date().getMonth()], 
+    tahun: new Date().getFullYear(), 
+    kodeOwner: "",
+    owner: "",
+    brand: "",
+    totalAkuisisiReferal: 0,
+    totalReferral: 0,
   });
 
   const [formInput, setFormInput] = useState(initialFormState);
 
-  // AMAN SSR: Memuat profil setelah mounted
   useEffect(() => {
     if (typeof window !== "undefined") {
       const savedPic = localStorage.getItem("user_pic");
       const savedRole = localStorage.getItem("user_role") || localStorage.getItem("userRole");
-      
       let panggilan = "Satria";
+      
       if (savedPic) {
         panggilan = dapatkanNamaPanggilan(savedPic);
         setLoggedInUser(panggilan);
       }
-      
       if (savedRole) {
         setUserRole(savedRole);
       } else {
         const namaBersih = panggilan.toLowerCase();
         setUserRole(namaBersih === "satria" || namaBersih === "boby" ? "Admin" : "Sales");
       }
-
-      setFormInput(prev => ({ ...prev, pic: panggilan }));
+      
+      setFormInput(prev => ({ ...prev, picNasabah: panggilan }));
       setIsSessionReady(true);
     }
   }, []);
 
-  // SINKRONISASI FORM: Kunci PIC otomatis saat tambah data baru
   useEffect(() => {
     if (isModalOpen && !isEditMode) {
       if (typeof window !== "undefined") {
-        const currentPic = dapatkanNamaPanggilan(localStorage.getItem("user_pic") || "Satria");
+        const savedPic = localStorage.getItem("user_pic") || "Satria";
         setFormInput(prev => ({ 
           ...prev, 
-          tanggal: getTodayString(),
-          pic: currentPic 
+          tanggalInput: getTodayString(),
+          bulanTerdaftar: listBulan[new Date().getMonth()],
+          tahun: new Date().getFullYear(),
+          picNasabah: dapatkanNamaPanggilan(savedPic) 
         }));
       }
     }
   }, [isModalOpen, isEditMode]);
 
-  const fetchReports = async () => {
+  // SINKRONISASI BACKEND LOGIC
+  const normalisasiMitra = (item: any) => {
+    return {
+      id: item.id ?? item.ID,
+      createdAt: item.createdAt ?? item.created_at ?? "",
+      kategoriMitra: item.kategoriMitra ?? item.kategori_mitra ?? item.kategori ?? "REFERAL (Berlangganan)",
+      kategoriMitraSub: item.kategoriMitraSub ?? item.kategori_mit_sub ?? item.kategoriSub ?? "Mitra Referral",
+      picNasabah: item.picNasabah ?? item.pic_nasabah ?? item.pic ?? "",
+      bulanTerdaftar: item.bulanTerdaftar ?? item.bulan_terdaftar ?? "",
+      tahun: item.tahun ?? new Date().getFullYear(),
+      kodeOwner: item.kodeOwner ?? item.kode_owner ?? "",
+      owner: item.owner ?? item.ownerMitra ?? "",
+      brand: item.brand ?? item.namaBrand ?? item.nama_brand ?? "",
+      totalAkuisisiReferal: item.totalAkuisisiReferal ?? item.total_akuisisi_referal ?? 0,
+      totalReferral: item.totalReferral ?? item.total_referral ?? 0,
+    };
+  };
+
+  const fetchListMitra = async () => {
     try {
       setLoading(true);
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const response = await fetch(`${baseUrl}/api/report`);
+      const response = await fetch(`${baseUrl}/api/list-mitra`);
       if (response.ok) {
         const result = await response.json();
-        setData(result || []);
+        const rawList = result || [];
+        const normalized = rawList.map((item: any) => normalisasiMitra(item));
+        setData(normalized);
       }
     } catch (error) {
-      console.error("Gagal memuat data report:", error);
-    } finally {
+      console.error("Gagal memuat data master list mitra:", error);
+    } finally { 
       setLoading(false);
     }
   };
 
-  useEffect(() => { fetchReports(); }, []);
+  useEffect(() => {
+    fetchListMitra();
+  }, []);
 
   const daftarPicUnik = useMemo(() => {
     const setPic = new Set<string>();
     data.forEach((item: any) => {
-      setPic.add(dapatkanNamaPanggilan(item.pic || ""));
+      setPic.add(dapatkanNamaPanggilan(item.picNasabah || ""));
     });
     return Array.from(setPic).sort();
   }, [data]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormInput((prev) => ({
-      ...prev,
-      [name]: name === "tanggal" || name === "keterangan" || name === "pic"
-        ? value 
-        : value === "" ? 0 : Number(value),
-    }));
-  };
-
-  const handleInputFocus = (e: React.FocusEvent<HTMLInputElement>) => {
-    if (Number(e.target.value) === 0) e.target.select();
+    setFormInput((prev) => {
+      const updated = { ...prev, [name]: value };
+      if (name === "totalReferral" || name === "totalAkuisisiReferal" || name === "tahun") {
+        updated[name] = value === "" ? "" : Number(value);
+      }
+      return updated;
+    });
   };
 
   const resetForm = () => {
@@ -139,182 +170,195 @@ export default function ReportPage() {
     setFormInput(initialFormState());
   };
 
-  const formatTanggalIndo = (tglStr: string) => {
-    if (!tglStr || !tglStr.includes("-")) return tglStr;
-    const [year, month, day] = tglStr.split("-");
-    return new Date(Number(year), Number(month) - 1, Number(day)).toLocaleDateString("id-ID", {
-      weekday: "long", day: "numeric", month: "long", year: "numeric"
-    });
-  };
-
-  // 🌟 LOGIKA FILTER UTAMA SINKRONISASI DATA
-  const filteredData = data.filter((item: any) => {
-    const itemPicPanggilan = dapatkanNamaPanggilan(item.pic || "");
-    const matchesSearch = 
-      itemPicPanggilan.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      item.keterangan?.toLowerCase().includes(searchTerm.toLowerCase());
-
-    const isUserAdmin = userRole.toLowerCase() === "admin";
-    
-    let matchesRoleAkses: boolean;
-    if (isUserAdmin) {
-      matchesRoleAkses = picFilterAdmin === "Semua" || itemPicPanggilan.toLowerCase() === picFilterAdmin.toLowerCase();
-    } else {
-      const kunciPicDb = itemPicPanggilan.toLowerCase().substring(0, 4);
-      const kunciPicLogin = loggedInUser.toLowerCase().substring(0, 4);
-      matchesRoleAkses = kunciPicDb === kunciPicLogin || itemPicPanggilan.toLowerCase() === loggedInUser.toLowerCase();
-    }
-
-    const itemDateStr = item.tanggal ? item.tanggal.substring(0, 10) : "";
-    let matchesTanggal = false;
-    
-    if (modeFilter === "harian") {
-      matchesTanggal = itemDateStr === filterDate || itemDateStr.includes(filterDate);
-    } else {
-      matchesTanggal = item.tanggal ? item.tanggal.substring(0, 7) === filterMonth : false;
-    }
-
-    return matchesSearch && matchesRoleAkses && matchesTanggal;
-  });
-
-  // 🌟 FUNGSI EKSPOR EXCEL (DIPASTIKAN TERDEFINISI SEBELUM RETURN JSX)
-  const handleExportExcel = async () => {
-    if (filteredData.length === 0) {
-      alert("Tidak ada data laporan terfilter yang tersedia untuk diekspor pada periode ini.");
-      return;
-    }
-
-    try {
-      const XLSX = await import("xlsx");
-
-      const dataToExport = filteredData.map((item: any) => {
-        const tRespon = Number(item.responCall ?? 0) + Number(item.responChat ?? 0) + Number(item.responMeeting ?? 0) + Number(item.responVisit ?? 0);
-        const tNoRespon = Number(item.noResponCount ?? item.totalNoRespon ?? 0);
-        
-        return {
-          "Tanggal Laporan": item.tanggal ? item.tanggal.substring(0, 10) : "-",
-          "PIC Sales": dapatkanNamaPanggilan(item.pic),
-          "Respon Call": item.responCall ?? 0,
-          "Respon Chat": item.responChat ?? 0,
-          "Online Meeting": item.responMeeting ?? 0,
-          "Visit Lapangan": item.responVisit ?? 0,
-          "Total Tidak Merrespon": tNoRespon,
-          "Total Terrespon": tRespon,
-          "Grand Total Leads": tRespon + tNoRespon,
-          "Keterangan Aktivitas": item.keterangan || "-"
-        };
-      });
-
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(dataToExport);
-
-      ws["!cols"] = [
-        { wch: 16 }, { wch: 15 }, { wch: 14 }, { wch: 14 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 45 }
-      ];
-
-      const namaTab = modeFilter === "harian" ? `Report Hari ${filterDate}` : `Report Bulan ${filterMonth}`;
-      XLSX.utils.book_append_sheet(wb, ws, namaTab.substring(0, 31));
-
-      const namaFile = modeFilter === "harian"
-        ? `Daily_Report_Activity_Harian_${filterDate}.xlsx`
-        : `Daily_Report_Activity_Bulanan_${filterMonth}.xlsx`;
-
-      XLSX.writeFile(wb, namaFile);
-
-    } catch (error) {
-      console.error("Gagal mengekspor laporan kerja harian ke berkas Excel:", error);
-      alert("Terjadi gangguan teknis saat memproses pembuatan file Excel.");
-    }
-  };
-
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     const payload = {
       ...formInput,
-      pic: dapatkanNamaPanggilan(formInput.pic)
+      picNasabah: dapatkanNamaPanggilan(formInput.picNasabah),
+      telp: selectedRecord?.telp || "-", 
+      rekening: selectedRecord?.rekening || "-",
+      wilayah: selectedRecord?.wilayah || "-",
+      alamat: selectedRecord?.alamat || "-"
     };
 
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
       const url = isEditMode && selectedRecord
-        ? `${baseUrl}/api/report/update/${selectedRecord.id || selectedRecord.ID}`
-        : `${baseUrl}/api/report/create`;
-      
+        ? `${baseUrl}/api/list-mitra/update/${selectedRecord.id || selectedRecord.ID}`
+        : `${baseUrl}/api/list-mitra/create`;
+      const method = isEditMode ? "PUT" : "POST";
+
       const response = await fetch(url, {
-        method: isEditMode ? "PUT" : "POST",
+        method: method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        alert(isEditMode ? "Log report harian berhasil diperbarui!" : "Log aktivitas harian berhasil disimpan permanen!");
+        alert(isEditMode ? "Data Master List Mitra berhasil diperbarui!" : "Data Master List Mitra berhasil disimpan!");
         setIsModalOpen(false);
-        setFilterDate(formInput.tanggal);
-        setFilterMonth(formInput.tanggal.substring(0, 7));
+        setTanggalFilter(formInput.tanggalInput); 
+        setBulanFilter(formInput.tanggalInput.substring(0, 7));
         resetForm();
-        fetchReports();
+        fetchListMitra();
+      } else {
+        const result = await response.json();
+        alert(`Gagal Menyimpan: ${result.message || "Validasi backend menolak data input"}`);
       }
     } catch (error) {
-      console.error("Error saving report log:", error);
+      console.error("Error saving list mitra:", error);
     }
   };
 
   const handleDelete = async () => {
-    if (!selectedRecord || !window.confirm("Apakah Anda yakin ingin menghapus data log report ini secara permanen?")) return;
+    if (!selectedRecord || !window.confirm("Apakah Anda yakin ingin menghapus data master mitra ini secara permanen?")) return;
+
     try {
       const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
-      const response = await fetch(`${baseUrl}/api/report/delete/${selectedRecord.id || selectedRecord.ID}`, {
-        method: "DELETE",
-      });
+      const recordId = selectedRecord.id || selectedRecord.ID;
+      const response = await fetch(`${baseUrl}/api/list-mitra/delete/${recordId}`, { method: "DELETE" });
+
       if (response.ok) {
-        alert("Data log report berhasil dihapus!");
+        alert("Data Master List Mitra berhasil dihapus!");
         setIsModalOpen(false);
         resetForm();
-        fetchReports();
+        fetchListMitra();
       }
-    } catch (error) { console.error(error); }
+    } catch (error) {
+      console.error("Error deleting data:", error);
+    }
   };
 
   const handleOpenRowDetail = (item: any) => {
     setSelectedRecord(item);
     setIsEditMode(false); 
+    setFormInput({
+      tanggalInput: item.createdAt ? item.createdAt.substring(0, 10) : getTodayString(),
+      kategori: item.kategoriMitra || "REFERAL (Berlangganan)",
+      kategoriSub: item.kategoriMitraSub || "Mitra Referral",
+      picNasabah: dapatkanNamaPanggilan(item.picNasabah || loggedInUser),
+      bulanTerdaftar: item.bulanTerdaftar || listBulan[new Date().getMonth()],
+      tahun: item.tahun || new Date().getFullYear(),
+      kodeOwner: item.kodeOwner || "",
+      owner: item.owner || item.ownerMitra || "",
+      brand: item.brand || item.namaBrand || "",
+      totalAkuisisiReferal: item.totalAkuisisiReferal ?? 0,
+      totalReferral: item.totalReferral ?? 0,
+    });
     setIsModalOpen(true);
   };
 
   const handleActivateEditMode = () => {
     if (!selectedRecord) return;
     setIsEditMode(true);
-    setFormInput({
-      tanggal: selectedRecord.tanggal ? selectedRecord.tanggal.substring(0, 10) : getTodayString(),
-      keterangan: selectedRecord.keterangan || "",
-      pic: dapatkanNamaPanggilan(selectedRecord.pic || loggedInUser), 
-      responCall: selectedRecord.responCall ?? 0,
-      responChat: selectedRecord.responChat ?? 0,
-      responMeeting: selectedRecord.responMeeting ?? 0,
-      responVisit: selectedRecord.responVisit ?? 0,
-      noResponCount: selectedRecord.noResponCount ?? selectedRecord.totalNoRespon ?? 0,
-    });
   };
+
+  const handleExportExcel = async () => {
+    if (filteredData.length === 0) {
+      alert("Tidak ada data master mitra terfilter yang tersedia untuk diekspor pada periode ini.");
+      return;
+    }
+
+    try {
+      const XLSX = await import("xlsx");
+
+      const dataToExport = filteredData.map((item: any) => ({
+        "Tanggal Registrasi": item.createdAt ? item.createdAt.substring(0, 10) : "-",
+        "Bulan Terdaftar": item.bulanTerdaftar || "-",
+        "Tahun Buku": item.tahun || "-",
+        "PIC Sales Hunter": dapatkanNamaPanggilan(item.picNasabah),
+        "Kode Owner": item.kodeOwner || "-",
+        "Nama Owner": item.owner || "-",
+        "Nama Brand / Toko": item.brand || "-",
+        "Kategori Utama": item.kategoriMitra || "-",
+        "Sub Kategori": item.kategoriMitraSub || "-",
+        "Total Akuisisi Referal": item.totalAkuisisiReferal ?? 0,
+        "Total Referral": item.totalReferral ?? 0
+      }));
+
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.json_to_sheet(dataToExport);
+
+      ws["!cols"] = [
+        { wch: 18 }, { wch: 16 }, { wch: 12 }, { wch: 18 }, { wch: 14 }, { wch: 22 }, { wch: 25 }, { wch: 26 }, { wch: 20 }, { wch: 22 }, { wch: 16 }
+      ];
+
+      const namaTab = modeFilter === "harian" ? `Mitra Hari ${tanggalFilter}` : `Mitra Bulan ${bulanFilter}`;
+      XLSX.utils.book_append_sheet(wb, ws, namaTab.substring(0, 31));
+
+      const namaFile = modeFilter === "harian"
+        ? `Direktori_Master_Mitra_Harian_${tanggalFilter}.xlsx`
+        : `Direktori_Master_Mitra_Bulanan_${bulanFilter}.xlsx`;
+
+      XLSX.writeFile(wb, namaFile);
+
+    } catch (error) {
+      console.error("Gagal mengekspor direktori master mitra ke Excel:", error);
+      alert("Terjadi kegagalan teknis saat memproses pembuatan berkas Excel.");
+    }
+  };
+
+  const filteredData = data.filter((item: any) => {
+    const itemPicPanggilan = dapatkanNamaPanggilan(item.picNasabah || "");
+    
+    const matchesSearch = 
+      item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.owner?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      itemPicPanggilan.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const isUserAdmin = userRole.toLowerCase() === "admin";
+    
+    let matchesRoleAkses: boolean;
+    if (isUserAdmin) {
+      matchesRoleAkses = picFilter === "All" || itemPicPanggilan.toLowerCase() === picFilter.toLowerCase();
+    } else {
+      const kunciPicDb = itemPicPanggilan.toLowerCase().substring(0, 4);
+      const kunciPicLogin = loggedInUser.toLowerCase().substring(0, 4);
+      matchesRoleAkses = kunciPicDb === kunciPicLogin || itemPicPanggilan.toLowerCase() === loggedInUser.toLowerCase();
+    }
+    
+    const itemDateStr = item.createdAt ? item.createdAt.substring(0, 10) : "";
+    
+    if (modeFilter === "harian") {
+      return matchesSearch && matchesRoleAkses && (itemDateStr === tanggalFilter || itemDateStr.includes(tanggalFilter));
+    } else {
+      return matchesSearch && matchesRoleAkses && item.createdAt?.substring(0, 7) === bulanFilter;
+    }
+  });
 
   return (
     <div className="max-w-7xl mx-auto space-y-7 p-6 bg-[#FAF9F6] min-h-screen font-sans text-[#1C1C1E]">
       
       {/* HEADER SECTION */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between bg-white rounded-2xl p-6 border border-gray-200 shadow-sm gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between bg-white rounded-2xl p-6 border border-gray-200 shadow-sm gap-4">
         <div>
-          <h1 className="text-2xl font-black text-[#1D1D1F] tracking-tight">Daily Report Activity</h1>
-          <p className="text-xs text-[#86868B] mt-0.5 font-medium">Ringkasan log performa harian operasional PT PIPOSMART DIGITAL INDONESIA.</p>
-          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            Logged in: <span className="text-[#007AFF] font-black">{isSessionReady ? loggedInUser : "Loading..."} ({userRole})</span>
+          <h1 className="text-2xl font-black tracking-tight">Data List Mitra</h1>
+          <p className="text-xs text-gray-500 mt-0.5 font-medium">Manajemen ekosistem kemitraan korporasi & pelacakan referral harian.</p>
+          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Logged in: <span className="text-[#C92C1E] font-black">{isSessionReady ? loggedInUser : "Loading..."}</span>
+            </div>
+            
+            {/* BADGE SYSTEM TERKONDISIKAN SECARA DINAMIS DAN SERASI BERWARNA MERAH */}
+            {userRole.toLowerCase() === "admin" ? (
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-200 bg-red-50 text-[#C92C1E] uppercase tracking-wider shadow-sm">
+                Admin
+              </span>
+            ) : (
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-200 bg-red-50 text-[#C92C1E] uppercase tracking-wider shadow-sm">
+                Sales
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
           <button 
             onClick={handleExportExcel}
-            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm transition cursor-pointer flex items-center gap-1.5"
+            className="px-4 py-2.5 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 text-xs shadow-sm transition-all cursor-pointer flex items-center gap-1.5"
           >
             <svg className="w-3.5 h-3.5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -323,45 +367,43 @@ export default function ReportPage() {
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="px-5 py-2.5 bg-[#007AFF] text-white rounded-xl font-bold text-xs hover:bg-blue-600 shadow-md transition flex items-center gap-1.5 cursor-pointer"
+            className="px-5 py-2.5 bg-[#C92C1E] text-white rounded-xl font-bold text-xs shadow-md hover:bg-[#A82216] transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
             </svg>
-            Log Aktivitas Baru
+            Registrasi Mitra Baru
           </button>
         </div>
       </div>
 
-      {/* FILTER CONTROLLER PANEL */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-wrap">
+      {/* SEARCH & FILTER CONTROLS */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-200/60 shadow-sm flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
             <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </span>
             <input 
-              type="text" placeholder="Cari kata kunci keterangan..." value={searchTerm}
+              type="text" placeholder="Cari Brand, Owner, atau PIC..." value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 pl-9 pr-4 py-2 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none"
+              className="w-full bg-gray-50 border border-gray-200 p-2 pl-9 pr-4 py-2 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:bg-white focus:border-[#C92C1E] transition-all"
             />
           </div>
 
-          {/* DROPDOWN FILTER PIC SALES — HANYA UNTUK ROLE ADMIN */}
           {isSessionReady && userRole.toLowerCase() === "admin" && (
-            <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-              <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <div className="flex items-center gap-2 bg-red-50/50 border border-red-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
+              <svg className="w-3.5 h-3.5 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">PIC Sales:</span>
+              <span className="text-[11px] font-bold text-[#C92C1E] uppercase whitespace-nowrap">PIC:</span>
               <select
-                value={picFilterAdmin}
-                onChange={(e) => setPicFilterAdmin(e.target.value)}
+                value={picFilter} onChange={(e) => setPicFilter(e.target.value)}
                 className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
               >
-                <option value="Semua">Semua PIC</option>
+                <option value="All">Semua PIC</option>
                 {daftarPicUnik.map((pic) => (
                   <option key={pic} value={pic}>{pic}</option>
                 ))}
@@ -370,150 +412,216 @@ export default function ReportPage() {
           )}
 
           <div className="flex bg-[#F5F5F7] p-1 rounded-xl border border-gray-200">
-            <button type="button" onClick={() => setModeFilter("harian")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "harian" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"}`}>Harian</button>
-            <button type="button" onClick={() => setModeFilter("bulanan")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "bulanan" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"}`}>Bulanan</button>
+            <button type="button" onClick={() => setModeFilter("harian")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "harian" ? "bg-white text-[#C92C1E] shadow-sm" : "text-gray-500"}`}>Harian</button>
+            <button type="button" onClick={() => setModeFilter("bulanan")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "bulanan" ? "bg-white text-[#C92C1E] shadow-sm" : "text-gray-500"}`}>Bulanan</button>
           </div>
         </div>
-
-        <div className="flex items-center justify-end gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-gray-200 w-full sm:w-auto">
-          <svg className="w-3.5 h-3.5 text-gray-500 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-          </svg>
-          <span className="text-[11px] font-bold text-gray-400 uppercase whitespace-nowrap px-1">{modeFilter === "harian" ? "Pilih Tanggal:" : "Pilih Bulan:"}</span>
-          <input 
-            type={modeFilter === "harian" ? "date" : "month"} value={modeFilter === "harian" ? filterDate : filterMonth}
-            onChange={(e) => modeFilter === "harian" ? setFilterDate(e.target.value) : setFilterMonth(e.target.value)}
-            className="bg-white text-xs font-black text-gray-700 px-3 py-1.5 rounded-lg border border-gray-200 focus:outline-none cursor-pointer uppercase"
-          />
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+          <div className="flex items-center gap-2 bg-[#F5F5F7] p-2 rounded-xl border border-gray-200">
+            <svg className="w-3.5 h-3.5 text-gray-500 mr-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+            </svg>
+            <input 
+              type={modeFilter === "harian" ? "date" : "month"} value={modeFilter === "harian" ? tanggalFilter : bulanFilter}
+              onChange={(e) => modeFilter === "harian" ? setTanggalFilter(e.target.value) : setBulanFilter(e.target.value)}
+              className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer uppercase p-0.5"
+            />
+          </div>
         </div>
       </div>
 
-      {/* ACTIVITY LIST LAYOUT */}
-      {loading || !isSessionReady ? (
-        <div className="text-center py-24 font-bold text-sm text-gray-400 animate-pulse">Menghubungkan ke server report activity...</div>
-      ) : filteredData.length === 0 ? (
-        <div className="bg-white rounded-[24px] border border-gray-200/80 shadow-sm flex flex-col items-center justify-center py-28 px-4 text-center min-h-[350px]">
-          <svg className="w-12 h-12 text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.514 13H4" />
-          </svg>
-          <p className="text-[#8E8E93] font-bold text-sm tracking-tight max-w-md leading-relaxed">
-            Belum ada record follow up untuk {modeFilter === "harian" ? `tanggal ${filterDate}` : `bulan ${filterMonth}`}
-            {userRole.toLowerCase() === "admin" && picFilterAdmin !== "Semua" ? ` untuk PIC ${picFilterAdmin}` : ""}
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredData.map((item: any, idx: number) => {
-            const tRespon = Number(item.responCall ?? 0) + Number(item.responChat ?? 0) + Number(item.responMeeting ?? 0) + Number(item.responVisit ?? 0);
-            const tNoRespon = Number(item.noResponCount ?? item.totalNoRespon ?? 0);
-            return (
-              <div 
-                key={idx} onClick={() => handleOpenRowDetail(item)} 
-                className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm hover:shadow-md transition grid grid-cols-1 lg:grid-cols-12 gap-5 items-center relative overflow-hidden group cursor-pointer"
-              >
-                <div className="absolute left-0 inset-y-0 w-1 bg-[#007AFF]" />
-                <div className="lg:col-span-5 space-y-1.5">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-[10px] uppercase font-black text-[#007AFF] bg-blue-50 px-2 py-0.5 rounded-md flex items-center gap-1">
-                      <svg className="w-3 h-3 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Laporan Kerja
-                    </span>
-                    <span className="text-[10px] uppercase font-extrabold text-blue-700 bg-blue-100/50 px-2 py-0.5 rounded-md">👤 {dapatkanNamaPanggilan(item.pic)}</span>
-                    <span className="text-xs font-bold text-gray-500">{formatTanggalIndo(item.tanggal)}</span>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-700 leading-relaxed pr-2 truncate">{item.keterangan || "Tidak ada rincian aktivitas tambahan kerja."}</p>
-                </div>
-                <div className="lg:col-span-5 grid grid-cols-2 sm:grid-cols-5 gap-3 bg-gray-50 border border-gray-100 p-3 rounded-xl text-center">
-                  <div><span className="text-[9px] text-gray-400 font-bold block uppercase">Call</span><span className="text-xs font-black text-gray-800 mt-0.5 block">{item.responCall ?? 0}</span></div>
-                  <div><span className="text-[9px] text-gray-400 font-bold block uppercase">Chat</span><span className="text-xs font-black text-gray-800 mt-0.5 block">{item.responChat ?? 0}</span></div>
-                  <div><span className="text-[9px] text-gray-400 font-bold block uppercase">Meeting</span><span className="text-xs font-black text-gray-800 mt-0.5 block">{item.responMeeting ?? 0}</span></div>
-                  <div><span className="text-[9px] text-gray-400 font-bold block uppercase">Visit</span><span className="text-xs font-black text-gray-800 mt-0.5 block">{item.responVisit ?? 0}</span></div>
-                  <div className="col-span-2 sm:col-span-1 border-t sm:border-t-0 sm:border-l border-gray-200/60 pt-2 sm:pt-0">
-                    <span className="text-[9px] text-rose-500 font-bold block uppercase">No Respon</span><span className="text-xs font-black text-rose-600 mt-0.5 block">{tNoRespon}</span>
-                  </div>
-                </div>
-                <div className="lg:col-span-2 flex items-center justify-between lg:justify-end gap-5 border-t lg:border-t-0 pt-3 lg:pt-0 border-gray-100">
-                  <div><span className="text-[9px] text-gray-400 font-bold uppercase block">Terrespon</span><span className="text-sm font-black text-emerald-600 block mt-0.5">{tRespon} Nasabah</span></div>
-                  <div className="text-right bg-blue-50/50 border border-blue-100/50 px-3.5 py-1.5 rounded-xl min-w-[70px]">
-                    <span className="text-[9px] text-[#007AFF] font-extrabold uppercase block">Grand Total</span>
-                    <span className="text-base font-black text-[#007AFF] block mt-0.5">{tRespon + tNoRespon}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+      {/* DATA TABLE INTEGRATION */}
+      <div className="space-y-4">
+        {loading || !isSessionReady ? (
+          <div className="text-center py-24 font-bold text-sm text-gray-400 animate-pulse">Sinkronisasi direktori crm...</div>
+        ) : filteredData.length === 0 ? (
+          <div className="text-center py-20 bg-white border border-dashed rounded-3xl text-gray-400 text-xs font-medium">
+            <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 00-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.514 13H4" />
+            </svg>
+            Tidak ada data master mitra ditemukan.
+          </div>
+        ) : (
+          <div className="bg-white p-2 border border-gray-200/70 rounded-3xl shadow-sm">
+            <DataTable 
+              columns={[
+                { header: "Bulan Terdaftar", accessor: "bulanTerdaftar" }, 
+                { header: "Tahun", accessor: "tahun" },
+                { header: "Kode Owner", accessor: "kodeOwner", render: (item: any) => <span className="font-mono text-gray-400 font-medium">{item.kodeOwner ? `#${item.kodeOwner}` : "-"}</span> },
+                { header: "Owner Mitra", accessor: "owner" },
+                { header: "Nama Brand", accessor: "brand", render: (item: any) => <span className="font-black text-gray-800">{item.brand || "-"}</span> }, 
+                { 
+                  header: "Kategori Mitra", 
+                  accessor: "kategoriMitra", 
+                  render: (item: any) => {
+                    const kat = item.kategoriMitra || "-";
+                    let badgeStyle = "bg-amber-50 text-amber-700 border-amber-200";
+                    if (kat.includes("REFERAL")) badgeStyle = "bg-red-50 text-[#C92C1E] border-red-200";
+                    else if (kat.includes("AFILIASI")) badgeStyle = "bg-purple-50 text-purple-700 border-purple-200";
 
-      {/* POP-UP MODAL FORM INPUT DATA */}
+                    return (
+                      <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-md border text-center whitespace-nowrap block ${badgeStyle}`}>
+                        {kat}
+                      </span>
+                    );
+                  }
+                },
+              ]} 
+              initialData={filteredData} 
+              onRowClick={(item: any) => handleOpenRowDetail(item)} 
+            />
+          </div>
+        )}
+      </div>
+
+      {/* POP-UP MODAL DATA */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-3">
+            <div className="flex justify-between items-center border-b pb-3 border-red-100">
               <div>
                 <h2 className="text-md font-bold text-[#1D1D1F] flex items-center gap-1.5">
-                  <svg className="w-4 h-4 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg className="w-4 h-4 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
-                  {selectedRecord && !isEditMode ? "Rincian Log Performa Kerja" : isEditMode ? "Ubah Log Performa Kerja" : "Tambah Log Aktivitas Harian"}
+                  {selectedRecord && !isEditMode ? "Rincian Data Master Database Mitra" : isEditMode ? "Perbarui Data Master Mitra" : "Registrasi Record Master Mitra Baru"}
                 </h2>
                 <p className="text-[11px] text-gray-400 font-medium mt-0.5">Sistem otomatis mengunci PIC berdasarkan akun login aktif.</p>
               </div>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="text-gray-400 text-sm p-1.5 hover:bg-gray-100 rounded-xl cursor-pointer">✕</button>
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)} 
+                className="text-gray-400 text-sm p-1.5 hover:bg-gray-100 hover:text-[#C92C1E] rounded-xl cursor-pointer transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
             </div>
+
             <form onSubmit={handleSave} className="space-y-4 text-xs font-bold text-gray-500">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-gray-600">Pilih Tanggal Operasional Laporan</label>
+                  <label className="text-gray-600">Tanggal Operasional Laporan</label>
                   <input 
-                    type="date" name="tanggal" value={selectedRecord && !isEditMode ? selectedRecord.tanggal?.substring(0, 10) : formInput.tanggal} 
-                    onChange={handleInputChange} disabled={selectedRecord && !isEditMode}
-                    className="border border-[#E5E5EA] p-3 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none bg-white disabled:bg-[#F5F5F7] uppercase cursor-pointer" required 
+                    type="date" name="tanggalInput" value={formInput.tanggalInput} 
+                    onChange={handleInputChange} disabled={selectedRecord && !isEditMode} 
+                    className="border border-[#E5E5EA] p-3 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7] uppercase cursor-pointer" required 
                   />
                 </div>
                 <div className="flex flex-col gap-1.5">
-                  <label className="text-gray-600">PIC Laporan</label>
-                  <input type="text" name="pic" value={formInput.pic} disabled className="border border-[#E5E5EA] p-3 rounded-xl text-sm font-black text-[#007AFF] bg-gray-100 cursor-not-allowed focus:outline-none" />
+                  <label className="text-gray-600">PIC</label>
+                  <input type="text" name="picNasabah" value={formInput.picNasabah} disabled className="border border-red-200 p-3 rounded-xl text-sm font-black text-[#C92C1E] bg-red-50/30 cursor-not-allowed focus:outline-none" />
                 </div>
               </div>
 
-              <div className="bg-blue-50/40 border border-blue-100 p-4 rounded-2xl space-y-3">
-                <span className="text-[10px] font-black text-[#007AFF] bg-blue-100/60 px-2.5 py-0.5 rounded-md uppercase">Kategori Nasabah Terrespon</span>
+              {/* Kategori Utama & Sub (Box Merah/Rose Kontainer Report) */}
+              <div className="bg-red-50/40 border border-red-100 p-4 rounded-2xl space-y-3">
+                <span className="text-[10px] font-black text-[#C92C1E] bg-red-100/60 px-2.5 py-0.5 rounded-md uppercase">Kategori Kemitraan Utama</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#C92C1E]/80">Kategori Utama</label>
+                    {selectedRecord && !isEditMode ? (
+                      <input type="text" value={formInput.kategori} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-gray-100 disabled:bg-[#F5F5F7]" />
+                    ) : (
+                      <select name="kategori" value={formInput.kategori} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white">
+                        <option value="REFERAL (Berlangganan)">REFERAL (Berlangganan)</option>
+                        <option value="AFILIASI (Eks. Mesin, Rak, Dll)">AFILIASI (Eks. Mesin, Rak, Dll)</option>
+                        <option value="FRANCHISE (Jual Brand)">FRANCHISE (Jual Brand)</option>
+                      </select>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#C92C1E]/80">Sub Kategori Kemitraan</label>
+                    {selectedRecord && !isEditMode ? (
+                      <input type="text" value={formInput.kategoriSub} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-gray-100 disabled:bg-[#F5F5F7]" />
+                    ) : (
+                      <select name="kategoriSub" value={formInput.kategoriSub} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white">
+                        <option value="Mitra Referral">Mitra Referral</option>
+                        <option value="Mitra Corporated">Mitra Corporated</option>
+                        <option value="Vendor Utama">Vendor Utama</option>
+                        <option value="Personal Affiliate">Personal Affiliate</option>
+                      </select>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Periode Terdaftar Container */}
+              <div 
+                className="p-4 rounded-2xl space-y-3"
+                style={{
+                  backgroundColor: "#FFF5F5",
+                  border: "1px solid #FEE2E2"
+                }}
+              >
+                <span 
+                  className="text-[10px] font-black px-2.5 py-0.5 rounded-md uppercase"
+                  style={{ color: "#C92C1E", background: "rgba(239, 68, 68, 0.15)" }}
+                >
+                  Periode Buku Terdaftar
+                </span>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-blue-900/80">Aktivitas Call (Telepon)</label>
-                    <input type="number" name="responCall" value={selectedRecord && !isEditMode ? (selectedRecord.responCall ?? 0) : (formInput.responCall === 0 ? "" : formInput.responCall)} onChange={handleInputChange} onFocus={handleInputFocus} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-white disabled:bg-[#F5F5F7]" />
+                    <label style={{ color: "#C92C1E" }}>Bulan Terdaftar (Dapat Diedit)</label>
+                    {selectedRecord && !isEditMode ? (
+                      <input type="text" value={formInput.bulanTerdaftar} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-gray-100 disabled:bg-[#F5F5F7]" />
+                    ) : (
+                      <select name="bulanTerdaftar" value={formInput.bulanTerdaftar} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none cursor-pointer focus:border-[#C92C1E] transition-colors bg-white">
+                        {listBulan.map((bln) => (
+                          <option key={bln} value={bln}>{bln}</option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-blue-900/80">Aktivitas Chat (WhatsApp)</label>
-                    <input type="number" name="responChat" value={selectedRecord && !isEditMode ? (selectedRecord.responChat ?? 0) : (formInput.responChat === 0 ? "" : formInput.responChat)} onChange={handleInputChange} onFocus={handleInputFocus} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-white disabled:bg-[#F5F5F7]" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-blue-900/80">Online Meeting</label>
-                    <input type="number" name="responMeeting" value={selectedRecord && !isEditMode ? (selectedRecord.responMeeting ?? 0) : (formInput.responMeeting === 0 ? "" : formInput.responMeeting)} onChange={handleInputChange} onFocus={handleInputFocus} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-white disabled:bg-[#F5F5F7]" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-blue-900/80">Visit Lapangan</label>
-                    <input type="number" name="responVisit" value={selectedRecord && !isEditMode ? (selectedRecord.responVisit ?? 0) : (formInput.responVisit === 0 ? "" : formInput.responVisit)} onChange={handleInputChange} onFocus={handleInputFocus} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-white disabled:bg-[#F5F5F7]" />
+                    <label style={{ color: "#C92C1E" }}>Tahun Buku (Dapat Diedit)</label>
+                    <input 
+                      type="number" name="tahun" placeholder="Contoh: 2025" 
+                      value={formInput.tahun} onChange={handleInputChange} 
+                      disabled={selectedRecord && !isEditMode} 
+                      className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" 
+                      required 
+                    />
                   </div>
                 </div>
               </div>
 
-              <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl space-y-2">
-                <span className="text-[10px] font-black text-gray-500 bg-gray-200/80 px-2.5 py-0.5 rounded-md uppercase">Kategori Tidak Merrespon</span>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-gray-600">Total Nasabah No Respon</label>
-                  <input type="number" name="noResponCount" value={selectedRecord && !isEditMode ? (selectedRecord.noResponCount ?? selectedRecord.totalNoRespon ?? 0) : (formInput.noResponCount === 0 ? "" : formInput.noResponCount)} onChange={handleInputChange} onFocus={handleInputFocus} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-white disabled:bg-[#F5F5F7]" />
+              {/* Rincian Identitas Owner Box */}
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl space-y-3">
+                <span className="text-[10px] font-black text-gray-500 bg-gray-200/80 px-2.5 py-0.5 rounded-md uppercase">Identitas Pemilik & Toko</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-gray-600">Kode Owner</label>
+                    <input type="text" name="kodeOwner" placeholder="Contoh: 11165" value={formInput.kodeOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-gray-600">Nama Owner</label>
+                    <input type="text" name="owner" placeholder="Nama owner" value={formInput.owner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" required />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-gray-600">Brand / Nama Toko</label>
+                    <input type="text" name="brand" placeholder="Nama brand laundry" value={formInput.brand} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" required />
+                  </div>
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <label className="text-gray-600">Keterangan / Aktivitas Kerja Tambahan</label>
-                <textarea name="keterangan" rows={3} placeholder="Tulis detail aktivitas kerja..." value={selectedRecord && !isEditMode ? selectedRecord.keterangan : formInput.keterangan} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-3 rounded-xl text-sm font-medium text-gray-800 resize-none focus:outline-none bg-white disabled:bg-[#F5F5F7] font-sans" required />
+              {/* Parameter Akumulasi Nilai Referral */}
+              <div className="bg-red-50/40 border border-red-100 p-4 rounded-2xl space-y-3">
+                <span className="text-[10px] font-black text-[#C92C1E] bg-red-100/60 px-2.5 py-0.5 rounded-md uppercase">Akumulasi Performansi Referral</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#C92C1E]/80">Total Akuisisi Referal</label>
+                    <input type="number" name="totalAkuisisiReferal" value={formInput.totalAkuisisiReferal} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#C92C1E]/80">Total Referral</label>
+                    <input type="number" name="totalReferral" value={formInput.totalReferral} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" />
+                  </div>
+                </div>
               </div>
 
+              {/* CONTROLS FOOTER */}
               <div className="flex justify-between items-center pt-4 border-t border-gray-100 gap-2">
                 <div>
                   {selectedRecord && !isEditMode && (
@@ -524,11 +632,11 @@ export default function ReportPage() {
                         </svg>
                         Ubah / Edit
                       </button>
-                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold hover:bg-rose-100 text-xs transition cursor-pointer flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-red-50 text-[#C92C1E] border border-red-200 font-bold hover:bg-red-100 text-xs transition cursor-pointer flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        Hapus Log
+                        Hapus Master
                       </button>
                     </div>
                   )}
@@ -536,7 +644,7 @@ export default function ReportPage() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 text-sm cursor-pointer">{selectedRecord && !isEditMode ? "Selesai" : "Batal"}</button>
                   {(isEditMode || !selectedRecord) && (
-                    <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold hover:bg-[#0062CC] text-sm shadow-md cursor-pointer">{isEditMode ? "Simpan Perubahan" : "Simpan Report"}</button>
+                    <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#C92C1E] text-white font-bold hover:bg-[#A82216] text-sm shadow-md cursor-pointer transition-colors">{isEditMode ? "Simpan Perubahan" : "Simpan Master"}</button>
                   )}
                 </div>
               </div>

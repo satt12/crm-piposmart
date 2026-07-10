@@ -329,11 +329,24 @@ export default function CallChatPage() {
           <p className="text-xs text-gray-500 mt-0.5 font-medium">
             Manajemen riwayat monitoring aktivitas follow-up call & chat whatsapp internal PT PIPOSMART DIGITAL INDONESIA.
           </p>
-          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            Logged in: <span className="text-[#007AFF] font-black">{isSessionReady ? loggedInUser : "Loading..."} ({userRole})</span>
+          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Logged in: <span className="text-[#C92C1E] font-black">{isSessionReady ? loggedInUser : "Loading..."}</span>
+            </div>
+
+            {/* DUAL BADGE SYSTEM — KEDUANYA WARNA MERAH KHAS REPORT SESUAI INTEGRASI */}
+            {userRole.toLowerCase() === "admin" ? (
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-200 bg-red-50 text-[#C92C1E] uppercase tracking-wider shadow-sm">
+                Admin
+              </span>
+            ) : (
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-200 bg-red-50 text-[#C92C1E] uppercase tracking-wider shadow-sm">
+                Sales
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -348,7 +361,7 @@ export default function CallChatPage() {
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="px-5 py-2.5 bg-[#007AFF] text-white font-bold rounded-xl text-xs hover:bg-blue-600 shadow-md transition cursor-pointer flex items-center gap-1.5"
+            className="px-5 py-2.5 bg-[#C92C1E] text-white font-bold rounded-xl text-xs hover:bg-[#A82216] shadow-md transition-colors cursor-pointer flex items-center gap-1.5"
           >
             <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -363,23 +376,23 @@ export default function CallChatPage() {
         <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
             <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </span>
             <input 
               type="text" placeholder="Cari Brand, Owner, atau PIC..." value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 p-2 pl-9 pr-4 py-2 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none"
+              className="w-full bg-gray-50 border border-gray-200 p-2 pl-9 pr-4 py-2 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:bg-white focus:border-[#C92C1E] transition-all"
             />
           </div>
 
           {isSessionReady && userRole.toLowerCase() === "admin" && (
-            <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-              <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <div className="flex items-center gap-2 bg-red-50/50 border border-red-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
+              <svg className="w-3.5 h-3.5 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">PIC:</span>
+              <span className="text-[11px] font-bold text-[#C92C1E] uppercase whitespace-nowrap">PIC:</span>
               <select
                 value={picFilterAdmin} onChange={(e) => setPicFilterAdmin(e.target.value)}
                 className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
@@ -392,9 +405,10 @@ export default function CallChatPage() {
             </div>
           )}
 
+          {/* TOGGLE PANEL — PANEL TOGGLE DENGAN AKSEN MERAH BEBAS GARIS HITAM */}
           <div className="flex bg-[#F5F5F7] p-1 rounded-xl border border-gray-200">
-            <button type="button" onClick={() => setModeFilter("harian")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "harian" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"}`}>Harian</button>
-            <button type="button" onClick={() => setModeFilter("bulanan")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "bulanan" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"}`}>Bulanan</button>
+            <button type="button" onClick={() => setModeFilter("harian")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "harian" ? "bg-white text-[#C92C1E] shadow-sm" : "text-gray-500"}`}>Harian</button>
+            <button type="button" onClick={() => setModeFilter("bulanan")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "bulanan" ? "bg-white text-[#C92C1E] shadow-sm" : "text-gray-500"}`}>Bulanan</button>
           </div>
         </div>
         
@@ -418,7 +432,10 @@ export default function CallChatPage() {
           <div className="text-center py-24 text-sm text-gray-400 font-bold animate-pulse">Menghubungkan ke tabel call & chat...</div>
         ) : filteredData.length === 0 ? (
           <div className="text-center py-20 bg-white border border-dashed rounded-3xl text-gray-400 text-xs font-medium">
-            📭 Tidak ada data log ditemukan.
+            <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.514 13H4" />
+            </svg>
+            Tidak ada data log ditemukan.
           </div>
         ) : (
           <div className="bg-white p-2 border border-gray-200/70 rounded-3xl shadow-sm">
@@ -429,10 +446,10 @@ export default function CallChatPage() {
                 { header: "Project / Brand", accessor: "brand", render: (item: any) => <span className="font-black text-gray-800">{item.brand || "-"}</span> }, 
                 { header: "Nama Owner", accessor: "namaOwner" },
                 { header: "No. HP Mitra", accessor: "hpOwner", render: (item: any) => <span className="font-mono">{item.hpOwner || "-"}</span> },
-                { /* 🛠️ PERBAIKAN: Menghapus filter includes("baru") agar tulisan sesuai data asli */
+                { 
                   header: "Status", accessor: "statusAkun", render: (item: any) => (
                     <span className={`text-[11px] font-black px-2.5 py-0.5 rounded-md border text-center ${
-                      item.statusAkun === "Outlet Baru" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                      item.statusAkun === "Outlet Baru" ? "bg-amber-50 text-amber-700 border-emerald-200" :
                       item.statusAkun === "Referral Mitra" ? "bg-purple-50 text-purple-700 border-purple-200" :
                       "bg-sky-50 text-sky-700 border-sky-200" 
                     }`}>
@@ -452,26 +469,39 @@ export default function CallChatPage() {
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-xl space-y-4 border border-[#E5E5EA] max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h2 className="text-md font-bold text-[#1D1D1F]">
-                {selectedRecord && !isEditMode ? "📋 Rincian Data Call & Chat" : isEditMode ? "✏️ Ubah Log Aktivitas" : "➕ Log Riwayat Box Baru"}
+            <div className="flex justify-between items-center border-b pb-3 border-red-100">
+              <h2 className="text-md font-bold text-[#1D1D1F] flex items-center gap-1.5">
+                {selectedRecord && !isEditMode ? (
+                  <svg className="w-4 h-4 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                ) : isEditMode ? (
+                  <svg className="w-4 h-4 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                )}
+                {selectedRecord && !isEditMode ? "Rincian Data Call & Chat" : isEditMode ? "Ubah Log Aktivitas" : "Log Riwayat Box Baru"}
               </h2>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="text-[#86868B] text-lg hover:text-black cursor-pointer">✕</button>
+              <button type="button" onClick={() => setIsModalOpen(false)} className="text-[#86868B] text-lg hover:text-[#C92C1E] rounded-xl p-1 hover:bg-gray-100 cursor-pointer transition-colors">✕</button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4 text-xs font-bold text-[#515154]">
+            <form onSubmit={handleSave} className="space-y-4 text-xs font-bold text-gray-500">
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1">
                   <label>TANGGAL FU</label>
-                  <input type="date" name="tanggalFu" value={selectedRecord && !isEditMode ? selectedRecord.tanggalFu?.substring(0, 10) : formInput.tanggalFu} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-white disabled:bg-[#F5F5F7] focus:outline-none cursor-pointer uppercase" required />
+                  <input type="date" name="tanggalFu" value={selectedRecord && !isEditMode ? selectedRecord.tanggalFu?.substring(0, 10) : formInput.tanggalFu} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-white disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors cursor-pointer uppercase" required />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>BULAN BERJALAN</label>
-                  <input type="text" name="bulan" placeholder="Contoh: Juli" value={selectedRecord && !isEditMode ? selectedRecord.bulan : formInput.bulan} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-white disabled:bg-[#F5F5F7] focus:outline-none" required />
+                  <input type="text" name="bulan" placeholder="Contoh: Juli" value={selectedRecord && !isEditMode ? selectedRecord.bulan : formInput.bulan} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-white disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors" required />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>TANGGAL DIBAGIKAN</label>
-                  <input type="date" name="tanggalDibagikan" value={selectedRecord && !isEditMode ? selectedRecord.tanggalDibagikan?.substring(0, 10) : formInput.tanggalDibagikan} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-white disabled:bg-[#F5F5F7] focus:outline-none cursor-pointer uppercase" required />
+                  <input type="date" name="tanggalDibagikan" value={selectedRecord && !isEditMode ? selectedRecord.tanggalDibagikan?.substring(0, 10) : formInput.tanggalDibagikan} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-white disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors cursor-pointer uppercase" required />
                 </div>
               </div>
 
@@ -481,7 +511,7 @@ export default function CallChatPage() {
                   {selectedRecord && !isEditMode ? (
                     <input type="text" value={selectedRecord.statusAkun} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium bg-[#F5F5F7] text-gray-500" />
                   ) : (
-                    <select name="statusAcnt" value={formInput.statusAcnt} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none cursor-pointer">
+                    <select name="statusAcnt" value={formInput.statusAcnt} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none focus:border-[#C92C1E] transition-colors cursor-pointer">
                       <option value="Akun Baru">Akun Baru</option>
                       <option value="Outlet Baru">Outlet Baru</option>
                       <option value="Referral Mitra">Referral Mitra</option>
@@ -490,54 +520,64 @@ export default function CallChatPage() {
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>NO. HP OWNER</label>
-                  <input type="text" name="hpOwner" placeholder="Contoh: 08123456xxx" value={selectedRecord && !isEditMode ? selectedRecord.hpOwner : formInput.hpOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none" required />
+                  <input type="text" name="hpOwner" placeholder="Contoh: 08123456xxx" value={selectedRecord && !isEditMode ? selectedRecord.hpOwner : formInput.hpOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors" required />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1">
                   <label>NAMA OWNER</label>
-                  <input type="text" name="namaOwner" placeholder="Contoh: Pak Budi" value={selectedRecord && !isEditMode ? selectedRecord.namaOwner : formInput.namaOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none" required />
+                  <input type="text" name="namaOwner" placeholder="Contoh: Pak Budi" value={selectedRecord && !isEditMode ? selectedRecord.namaOwner : formInput.namaOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors" required />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>KODE OWNER</label>
-                  <input type="number" name="kodeOwner" placeholder="Contoh: 1255" value={selectedRecord && !isEditMode ? selectedRecord.kodeOwner : formInput.kodeOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none" />
+                  <input type="number" name="kodeOwner" placeholder="Contoh: 1255" value={selectedRecord && !isEditMode ? selectedRecord.kodeOwner : formInput.kodeOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors" />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>PIC SALES</label>
-                  <input type="text" name="pic" value={formInput.pic} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-black text-[#007AFF] bg-gray-100 cursor-not-allowed focus:outline-none" />
+                  <input type="text" name="pic" value={formInput.pic} disabled className="border border-red-200 p-2.5 rounded-xl text-sm font-black text-[#C92C1E] bg-red-50/30 cursor-not-allowed focus:outline-none" />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1 col-span-2">
                   <label>PROJECT / BRAND</label>
-                  <input type="text" name="brand" placeholder="Contoh: Piposmart Laundry" value={selectedRecord && !isEditMode ? selectedRecord.brand : formInput.brand} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold disabled:bg-[#F5F5F7] focus:outline-none" required />
+                  <input type="text" name="brand" placeholder="Contoh: Piposmart Laundry" value={selectedRecord && !isEditMode ? selectedRecord.brand : formInput.brand} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors" required />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label>KODE BARIS</label>
-                  <input type="number" name="kodeBaris" placeholder="Contoh: 142" value={selectedRecord && !isEditMode ? selectedRecord.kodeBaris : formInput.kodeBaris} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none" required />
+                  <input type="number" name="kodeBaris" placeholder="Contoh: 142" value={selectedRecord && !isEditMode ? selectedRecord.kodeBaris : formInput.kodeBaris} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors" required />
                 </div>
               </div>
 
               <div className="flex flex-col gap-1">
                 <label>OUTLET</label>
-                <input type="text" name="outlet" placeholder="Contoh: Cabang Batam Center" value={selectedRecord && !isEditMode ? selectedRecord.outlet : formInput.outlet} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none" />
+                <input type="text" name="outlet" placeholder="Contoh: Cabang Batam Center" value={selectedRecord && !isEditMode ? selectedRecord.outlet : formInput.outlet} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium disabled:bg-[#F5F5F7] focus:outline-none focus:border-[#C92C1E] transition-colors" />
               </div>
 
               <div className="flex justify-between items-center pt-3 border-t border-gray-100">
                 <div>
                   {selectedRecord && !isEditMode && (
                     <div className="flex gap-2">
-                      <button type="button" onClick={handleActivateEditMode} className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold hover:bg-amber-100 text-xs transition cursor-pointer">✏️ Edit</button>
-                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-100 text-xs transition cursor-pointer">🗑️ Hapus</button>
+                      <button type="button" onClick={handleActivateEditMode} className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold hover:bg-amber-100 text-xs transition cursor-pointer flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-red-50 text-red-600 border border-red-200 font-bold hover:bg-red-100 text-xs transition cursor-pointer flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                        Hapus
+                      </button>
                     </div>
                   )}
                 </div>
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2.5 rounded-xl border font-bold text-gray-500 hover:bg-gray-50 text-sm cursor-pointer">{selectedRecord && !isEditMode ? "Selesai" : "Batal"}</button>
                   {(isEditMode || !selectedRecord) && (
-                    <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-sm shadow-md cursor-pointer">{isEditMode ? "Simpan Perubahan" : "Simpan Log"}</button>
+                    <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#C92C1E] text-white font-bold text-sm shadow-md cursor-pointer hover:bg-[#A82216] transition-colors">{isEditMode ? "Simpan Perubahan" : "Simpan Log"}</button>
                   )}
                 </div>
               </div>
