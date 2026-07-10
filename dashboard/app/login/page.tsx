@@ -16,14 +16,13 @@ export default function LoginPage() {
     loading || setLoading(true);
 
     try {
-      // 🌟 KONEKSI REAL-TIME KE BACKEND GO
       const response = await fetch("http://localhost:8080/api/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          username: email, // Backend menerima field ini sebagai key pencarian user
+          username: email,
           password: password,
         }),
       });
@@ -31,17 +30,13 @@ export default function LoginPage() {
       const result = await response.json();
 
       if (response.ok) {
-        // 🌟 SIMPAN REAL SESSION DATA HASIL RESPONS BACKEND
         localStorage.setItem("user_token", result.token || "");
-        localStorage.setItem("user_pic", result.user?.pic || result.user?.nama || "Satria"); // Menyinkronkan kunci otomatisasi modal PIC
+        localStorage.setItem("user_pic", result.user?.pic || result.user?.nama || "Satria");
         localStorage.setItem("user_role", result.user?.role || "Sales");
 
         alert(`Selamat datang kembali, ${result.user?.nama || "Tim Hunter"}!`);
-        
-        // 🌟 FIXED: Mengarahkan pendaratan (landing) pertama kali langsung ke halaman utama Dashboard
-        router.push("/"); // Ubah menjadi "/dashboard" jika rute folder dashboard kamu menggunakan sub-folder /dashboard
+        router.push("/");
       } else {
-        // Menampilkan pesan error spesifik dari backend (misal: "Username atau Password salah")
         setError(result.message || "Email atau password internal salah. Silakan hubungi Admin.");
       }
     } catch (err) {
@@ -58,8 +53,8 @@ export default function LoginPage() {
         
         {/* Logo / Header Perusahaan */}
         <div className="text-center space-y-1">
-          <h2 className="text-2xl font-bold tracking-tight text-[#1D1D1F]">Piposmart Business</h2>
-          <p className="text-xs text-[#86868B] font-medium">Internal Enterprise Portal</p>
+          <h2 className="text-2xl font-black tracking-tight text-[#C92C1E]">Piposmart Business</h2>
+          <p className="text-xs text-[#86868B] font-semibold tracking-wider uppercase">Internal Enterprise Portal</p>
         </div>
 
         {error && (
@@ -78,7 +73,7 @@ export default function LoginPage() {
               placeholder="nama@piposmart.com atau username"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3 py-2 text-[13px] bg-[#F5F5F7] border border-transparent rounded-xl text-[#1D1D1F] focus:outline-none focus:bg-white focus:border-[#007AFF] transition-all font-medium disabled:opacity-60"
+              className="w-full px-3 py-2 text-[13px] bg-[#F5F5F7] border border-transparent rounded-xl text-[#1D1D1F] focus:outline-none focus:bg-white focus:border-[#C92C1E] transition-all font-medium disabled:opacity-60"
             />
           </div>
 
@@ -91,14 +86,14 @@ export default function LoginPage() {
               placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-3 py-2 text-[13px] bg-[#F5F5F7] border border-transparent rounded-xl text-[#1D1D1F] focus:outline-none focus:bg-white focus:border-[#007AFF] transition-all font-medium disabled:opacity-60"
+              className="w-full px-3 py-2 text-[13px] bg-[#F5F5F7] border border-transparent rounded-xl text-[#1D1D1F] focus:outline-none focus:bg-white focus:border-[#C92C1E] transition-all font-medium disabled:opacity-60"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 px-4 py-2.5 text-[13px] font-semibold bg-[#007AFF] text-white hover:bg-[#0062CC] rounded-xl shadow-sm transition-all active:scale-[0.99] disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full mt-2 px-4 py-2.5 text-[13px] font-bold bg-[#C92C1E] text-white hover:bg-[#B02216] rounded-xl shadow-md transition-all active:scale-[0.99] disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
           >
             {loading ? "Memvalidasi Kredensial..." : "Masuk ke Sistem"}
           </button>
