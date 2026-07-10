@@ -43,8 +43,6 @@ const DATA_PACKET_MASTER: Record<string, SkemaHarga[]> = {
   ]
 };
 
-const DAFTAR_PIC = ["Satria Ramadhan", "Lidya Marpaung", "Laura"];
-
 function FormPenjualanPotensiContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -90,7 +88,6 @@ function FormPenjualanPotensiContent() {
     buktiTransfer: ""
   });
 
-  // 🌟 HELPER MANDIRI: Mengubah angka murni menjadi format titik ribuan lokal Indonesia
   const formatRibuanIndo = (nilai: number | string) => {
     if (nilai === undefined || nilai === null || nilai === "") return "";
     const angkaMurni = String(nilai).replace(/\D/g, "");
@@ -98,7 +95,6 @@ function FormPenjualanPotensiContent() {
     return new Intl.NumberFormat("id-ID").format(Number(angkaMurni));
   };
 
-  // 🌟 HELPER MANDIRI: Format visual di form katalog input non-aktif (Read Only)
   const formatRupiahKatalog = (value: number) => {
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
@@ -180,7 +176,6 @@ function FormPenjualanPotensiContent() {
         const listTenorTersedia = DATA_PACKET_MASTER[value] || [];
         const skemaPertama = listTenorTersedia.length > 0 ? listTenorTersedia[0].id_skema : "";
         nextForm.skemaId = skemaPertama;
-
         nextForm.paketKategoriAktual = value;
         nextForm.skemaIdAktual = skemaPertama;
         const skemaTerpilih = listTenorTersedia.find(s => s.id_skema === skemaPertama);
@@ -190,7 +185,6 @@ function FormPenjualanPotensiContent() {
       if (name === "skemaId") {
         const listTenorTersedia = DATA_PACKET_MASTER[nextForm.paketKategori] || [];
         const skemaTerpilih = listTenorTersedia.find(s => s.id_skema === value);
-
         nextForm.paketKategoriAktual = nextForm.paketKategori;
         nextForm.skemaIdAktual = value;
         if (skemaTerpilih) nextForm.nominalHargaDeal = skemaTerpilih.total_penjualan;
@@ -209,7 +203,6 @@ function FormPenjualanPotensiContent() {
         }
       }
 
-      // 🌟 INTERCEPTOR RUPIAH: Membersihkan string bertitik ke angka integer murni sebelum disimpan ke State
       if (name === "nominalHargaDeal") {
         const angkaBersih = value.replace(/\D/g, "");
         nextForm[name] = angkaBersih === "" ? 0 : Number(angkaBersih);
@@ -263,7 +256,7 @@ function FormPenjualanPotensiContent() {
         membership: formInput.membership,
         targetPaket: namaPaketFinal,      
         targetNominal: targetNominalStandar, 
-        nominalAktual: Number(formInput.nominalHargaDeal) || 0, // Aman terkirim sebagai integer number bersih ke backend Go
+        nominalAktual: Number(formInput.nominalHargaDeal) || 0,
         tanggalTraining: formInput.tanggalTraining,
         statusTraining: formInput.statusTraining,
         tanggalRealisasi: formInput.tanggalRealisasi,
@@ -303,13 +296,27 @@ function FormPenjualanPotensiContent() {
     <div className="max-w-5xl mx-auto p-8 bg-white border border-gray-200/80 shadow-sm rounded-3xl space-y-6 mt-6">
       <div className="flex justify-between items-center border-b pb-4">
         <div>
-          <h2 className="text-2xl font-black tracking-tight text-gray-900">
-            {mode === "edit" ? "✏️ Perbarui Data Master Penjualan" : "➕ Input Record Penjualan Baru"}
+          <h2 className="text-2xl font-black tracking-tight text-gray-900 flex items-center gap-2">
+            {mode === "edit" ? (
+              <svg className="w-6 h-6 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+              </svg>
+            )}
+            {mode === "edit" ? "Perbarui Data Master Penjualan" : "Input Record Penjualan Baru"}
           </h2>
-          <p className="text-xs text-gray-400 font-medium mt-0.5">Form formulir dinamis pembagian paket resmi langganan dan kustomisasi deal aktual lapangan.</p>
+          <p className="text-xs text-gray-400 font-medium mt-1">Form formulir dinamis pembagian paket resmi langganan dan kustomisasi deal aktual lapangan.</p>
         </div>
-        <button type="button" onClick={() => router.push("/penjualan")} className="text-xs font-bold px-4 py-2 bg-gray-50 border rounded-xl hover:bg-gray-100 transition text-gray-500 cursor-pointer">
-          ← Kembali ke Tabel
+
+        {/* 🛠️ TOMBOL KEMBALI JADI MERAH */}
+        <button type="button" onClick={() => router.push("/penjualan")} className="text-xs font-bold px-4 py-2 bg-white border border-gray-200 rounded-xl hover:border-[#C92C1E] hover:text-[#C92C1E] transition text-gray-500 cursor-pointer flex items-center gap-1.5 shadow-sm">
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          Kembali ke Tabel
         </button>
       </div>
 
@@ -330,50 +337,50 @@ function FormPenjualanPotensiContent() {
             </select>
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-gray-600">PIC Team Hunter</label>
+            <label className="text-[#C92C1E] font-bold">PIC Penjualan</label>
             <input 
               type="text" 
               name="picNasabah" 
               value={formInput.picNasabah} 
               disabled 
-              className="border p-3 rounded-xl text-sm font-black text-[#007AFF] bg-gray-100 cursor-not-allowed focus:outline-none" 
+              className="border border-red-200 p-3 rounded-xl text-sm font-black text-[#C92C1E] bg-red-50/30 cursor-not-allowed focus:outline-none" 
             />
           </div>
         </div>
 
         {/* PROFIL MITRA */}
-        <div className="p-6 border border-dashed border-blue-200 bg-blue-50/30 rounded-2xl space-y-5">
-          <span className="text-[10px] bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded font-black uppercase tracking-wider block w-max">
+        <div className="p-6 border border-dashed border-gray-300 bg-gray-50/50 rounded-2xl space-y-5">
+          <span className="text-[10px] bg-white text-gray-600 border border-gray-200 px-2.5 py-1 rounded font-black uppercase tracking-wider block w-max shadow-sm">
             Informasi Profil Toko / Usaha Mitra
           </span>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-600">Kode Owner</label>
-              <input type="text" name="kodeOwner" placeholder="Contoh: OWN-0034" value={formInput.kodeOwner} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 focus:outline-none" required />
+              <input type="text" name="kodeOwner" placeholder="Contoh: OWN-0034" value={formInput.kodeOwner} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-600">Nama Owner</label>
-              <input type="text" name="namaOwner" placeholder="Nama lengkap owner usaha" value={formInput.namaOwner} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 focus:outline-none" required />
+              <input type="text" name="namaOwner" placeholder="Nama lengkap owner usaha" value={formInput.namaOwner} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-600">No. HP Owner</label>
-              <input type="text" name="hpOwner" placeholder="Contoh: 0812345..." value={formInput.hpOwner} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 focus:outline-none" required />
+              <input type="text" name="hpOwner" placeholder="Contoh: 0812345..." value={formInput.hpOwner} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors" required />
             </div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="flex flex-col gap-1.5 md:col-span-2">
               <label className="text-gray-600">Nama Brand / Usaha</label>
-              <input type="text" name="brand" placeholder="Contoh: Pippo Laundry" value={formInput.brand} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 bg-white focus:outline-none" required />
+              <input type="text" name="brand" placeholder="Contoh: Pippo Laundry" value={formInput.brand} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-600">Nama Cabang / Outlet</label>
-              <input type="text" name="namaOutlet" placeholder="Contoh: Cabang Tiban" value={formInput.namaOutlet} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 bg-white focus:outline-none" required />
+              <input type="text" name="namaOutlet" placeholder="Contoh: Cabang Tiban" value={formInput.namaOutlet} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-medium text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors" required />
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-600">Status Konversi Pipeline</label>
-              <select name="status" value={formInput.status} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-semibold text-gray-800 bg-white focus:outline-none">
+              <select name="status" value={formInput.status} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-semibold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors">
                 <option value="Closing">Closing</option>
                 <option value="Potensi">Potensi</option>
                 <option value="Negoisasi">Negoisasi</option>
@@ -388,12 +395,15 @@ function FormPenjualanPotensiContent() {
         {/* SECTION PAKET */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           <div className="p-5 rounded-2xl border border-gray-200 bg-gray-50/50 space-y-4">
-            <span className="text-[10px] bg-gray-200 text-gray-700 px-2.5 py-1 rounded font-black uppercase tracking-wider block w-max">
-              📋 Paket Langganan (Rencana)
+            <span className="text-[10px] bg-white border border-gray-200 shadow-sm text-gray-600 px-2.5 py-1 rounded font-black uppercase tracking-wider flex items-center gap-1.5 w-max">
+              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+              </svg>
+              Paket Langganan (Rencana)
             </span>
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-700">Kategori Paket</label>
-              <select name="paketKategori" value={formInput.paketKategori} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none">
+              <select name="paketKategori" value={formInput.paketKategori} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors">
                 <option value="Basic">Basic</option>
                 <option value="Business">Business</option>
                 <option value="Pro">Pro</option>
@@ -402,7 +412,7 @@ function FormPenjualanPotensiContent() {
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-gray-700">Nama Promo / Skema Tenor</label>
-              <select name="skemaId" value={formInput.skemaId} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none">
+              <select name="skemaId" value={formInput.skemaId} onChange={handleInputChange} className="border p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors">
                 {listTenorAktif.map((skema) => (
                   <option key={skema.id_skema} value={skema.id_skema}>{skema.nama_promo}</option>
                 ))}
@@ -419,13 +429,16 @@ function FormPenjualanPotensiContent() {
             </div>
           </div>
 
-          <div className="p-5 rounded-2xl border border-blue-200 bg-blue-50/20 space-y-4">
-            <span className="text-[10px] bg-blue-100 text-blue-700 px-2.5 py-1 rounded font-black uppercase tracking-wider block w-max">
-              ⚡ Paket Aktual (Deal Lapangan)
+          <div className="p-5 rounded-2xl border-2 border-red-100 bg-red-50/30 space-y-4">
+            <span className="text-[10px] bg-red-100 text-[#C92C1E] border border-red-200 px-2.5 py-1 rounded font-black uppercase tracking-wider flex items-center gap-1.5 w-max">
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+              </svg>
+              Paket Aktual (Deal Lapangan)
             </span>
             <div className="flex flex-col gap-1.5">
-              <label className="text-blue-2003 select-none text-[#007AFF]">Kategori Paket</label>
-              <select name="paketKategoriAktual" value={formInput.paketKategoriAktual} onChange={handleInputChange} className="border-2 border-blue-200 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none">
+              <label className="select-none text-[#C92C1E] font-bold">Kategori Paket</label>
+              <select name="paketKategoriAktual" value={formInput.paketKategoriAktual} onChange={handleInputChange} className="border-2 border-red-200 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors">
                 <option value="Basic">Basic</option>
                 <option value="Business">Business</option>
                 <option value="Pro">Pro</option>
@@ -433,23 +446,22 @@ function FormPenjualanPotensiContent() {
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[#007AFF]">Nama Promo / Skema Tenor</label>
-              <select name="skemaIdAktual" value={formInput.skemaIdAktual} onChange={handleInputChange} className="border-2 border-blue-200 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none">
+              <label className="text-[#C92C1E] font-bold">Nama Promo / Skema Tenor</label>
+              <select name="skemaIdAktual" value={formInput.skemaIdAktual} onChange={handleInputChange} className="border-2 border-red-200 p-3 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors">
                 {listTenorAktifAktual.map((skema) => (
                   <option key={skema.id_skema} value={skema.id_skema}>{skema.nama_promo}</option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-[#007AFF]">Nominal Aktual Realisasi (Rp)</label>
-              {/* 🌟 DIUBAH MENJADI TYPE="TEXT" DENGAN FORMAT MASKING TITIK INDONESIA LOKAL */}
+              <label className="text-[#C92C1E] font-bold">Nominal Aktual Realisasi (Rp)</label>
               <input 
                 type="text" 
                 name="nominalHargaDeal" 
                 placeholder="Contoh: 1.500.000"
                 value={formatRibuanIndo(formInput.nominalHargaDeal)} 
                 onChange={handleInputChange} 
-                className="border-2 p-3.5 rounded-2xl text-base font-black bg-white border-blue-200 text-[#007AFF] focus:outline-none focus:border-blue-400" 
+                className="border-2 p-3.5 rounded-2xl text-base font-black bg-white border-red-200 text-[#C92C1E] focus:outline-none focus:border-[#C92C1E] focus:ring-1 focus:ring-red-100 transition-shadow" 
                 required
               />
             </div>
@@ -458,25 +470,28 @@ function FormPenjualanPotensiContent() {
 
         <div className="flex flex-col gap-1.5">
           <label className="text-gray-600">Membership System</label>
-          <select name="membership" value={formInput.membership} onChange={handleInputChange} className="border p-3.5 rounded-2xl text-sm font-semibold text-gray-800 bg-white focus:outline-none w-full">
+          <select name="membership" value={formInput.membership} onChange={handleInputChange} className="border p-3.5 rounded-2xl text-sm font-semibold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] w-full transition-colors">
             <option value="Aktivasi">Aktivasi</option>
             <option value="Trial">Trial</option>
             <option value="Non-Aktif">Non-Aktif</option>
           </select>
         </div>
 
-        <div className="p-4 border border-dashed border-emerald-200 bg-emerald-50/20 rounded-2xl space-y-4">
-          <span className="text-[10px] bg-emerald-100 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded font-black uppercase tracking-wider block w-max">
+        <div className="p-4 border border-dashed border-red-200 bg-red-50/20 rounded-2xl space-y-4">
+          <span className="text-[10px] bg-red-100 text-[#C92C1E] border border-red-200 px-2 py-0.5 rounded font-black uppercase tracking-wider flex items-center gap-1.5 w-max">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
             Parameter Validasi Administrasi Realisasi Aktual
           </span>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="flex flex-col gap-1.5">
-              <label className="text-emerald-900">Tanggal Realisasi Pembayaran Aktual</label>
-              <input type="date" name="tanggalRealisasi" value={formInput.tanggalRealisasi || ""} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none uppercase cursor-pointer" />
+              <label className="text-[#C92C1E] font-bold">Tanggal Realisasi Pembayaran Aktual</label>
+              <input type="date" name="tanggalRealisasi" value={formInput.tanggalRealisasi || ""} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] uppercase cursor-pointer transition-colors" />
             </div>
             <div className="flex flex-col gap-1.5">
-              <label className="text-emerald-900">URL Tautan / Link Bukti Transfer Valid</label>
-              <input type="text" name="buktiTransfer" placeholder="Contoh: https://drive.google.com/file/..." value={formInput.buktiTransfer || ""} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none" />
+              <label className="text-[#C92C1E] font-bold">URL Tautan / Link Bukti Transfer Valid</label>
+              <input type="text" name="buktiTransfer" placeholder="Contoh: https://drive.google.com/file/..." value={formInput.buktiTransfer || ""} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors" />
             </div>
           </div>
         </div>
@@ -484,30 +499,36 @@ function FormPenjualanPotensiContent() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="flex flex-col gap-1.5">
             <label className="text-gray-600">Tanggal Pelaksanaan Training</label>
-            <input type="date" name="tanggalTraining" value={formInput.tanggalTraining} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold text-gray-800 bg-white cursor-pointer" />
+            <input type="date" name="tanggalTraining" value={formInput.tanggalTraining} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold text-gray-800 bg-white cursor-pointer focus:outline-none focus:border-[#C92C1E] transition-colors" />
           </div>
           <div className="flex flex-col gap-1.5">
             <label className="text-gray-600">Status Capaian Training</label>
-            <select name="statusTraining" value={formInput.statusTraining} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none">
+            <select name="statusTraining" value={formInput.statusTraining} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-bold text-gray-800 bg-white focus:outline-none focus:border-[#C92C1E] transition-colors">
               <option value="Belum Training">Belum Training</option>
               <option value="Selesai Training">Selesai Training</option>
             </select>
           </div>
         </div>
 
-        <div className="flex justify-between items-center pt-4 border-t border-gray-100 gap-2">
-          <div>
+        <div className="flex flex-col-reverse sm:flex-row justify-between items-center pt-4 border-t border-gray-100 gap-4">
+          <div className="w-full sm:w-auto">
             {mode === "edit" && (
-              <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 font-bold hover:bg-rose-100 text-xs transition cursor-pointer">
-                🗑️ Hapus Record Permanen
+              <button type="button" onClick={handleDelete} className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 font-bold border border-rose-200 hover:bg-rose-100 text-xs transition cursor-pointer flex items-center justify-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                </svg>
+                Hapus Record Permanen
               </button>
             )}
           </div>
-          <div className="flex gap-3">
-            <button type="button" onClick={() => router.push("/penjualan")} className="px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 text-sm cursor-pointer">
+          <div className="flex gap-3 w-full sm:w-auto">
+            <button type="button" onClick={() => router.push("/penjualan")} className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 text-sm cursor-pointer transition-colors">
               Batal
             </button>
-            <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold hover:bg-[#0062CC] text-sm shadow-md cursor-pointer">
+            <button type="submit" className="flex-1 sm:flex-none px-6 py-2.5 rounded-xl bg-[#C92C1E] text-white font-bold hover:bg-[#A82216] text-sm shadow-md cursor-pointer transition-colors flex justify-center items-center gap-1.5">
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
               {mode === "edit" ? "Simpan Perubahan" : "Simpan Transaksi"}
             </button>
           </div>

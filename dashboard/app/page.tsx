@@ -295,7 +295,6 @@ export default function DashboardOverview() {
 
   const CustomXAxisTick = (props: any) => {
     const { x, y, payload } = props;
-    const isLydia = payload.value.toLowerCase().includes("lydia");
     return (
       <g transform={`translate(${x},${y})`}>
         <text
@@ -303,8 +302,8 @@ export default function DashboardOverview() {
           y={0}
           dy={16}
           textAnchor="middle"
-          fill={isLydia ? "#C92C1E" : "#888888"}
-          fontWeight={isLydia ? "bold" : "500"}
+          fill="#C92C1E"
+          fontWeight="bold"
           fontSize={12}
         >
           {payload.value}
@@ -362,23 +361,33 @@ export default function DashboardOverview() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-[#E5E5EA] pb-6 gap-4">
         <div>
           <h1 className="text-4xl font-extrabold tracking-tight text-[#1D1D1F]">CRM Pusat Kontrol</h1>
+          
           <p className="text-sm text-[#86868B] mt-2 font-medium">
-            PT. PIPOSMART DIGITAL INDONESIA • Panel Kendali Aktivitas Kemitraan & Performa Bisnis.
+            {userRole.toLowerCase() === "admin" 
+              ? "PT. PIPOSMART DIGITAL INDONESIA • Panel Kendali Aktivitas Kemitraan & Performa Bisnis."
+              : "Monitoring parameter target dan status konversi live tim sales PT PIPOSMART DIGITAL INDONESIA."
+            }
           </p>
           
-          <div className="text-xs text-gray-400 font-bold mt-2 flex items-center gap-2">
-            <span>Logged in:</span>
-            <div className="inline-flex items-center gap-1.5 bg-red-50 text-[#C92C1E] px-2.5 py-1 rounded-full border border-red-100/60 shadow-sm">
-              <svg className="w-3.5 h-3.5 text-[#C92C1E] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          {/* 🛠️ SINKRONISASI VISUAL: Replikasi Struktur Komponen Sesuai Gambar Menggunakan Warna Merah Piposmart */}
+          <div className="text-xs text-gray-400 font-bold mt-3 flex items-center gap-2.5">
+            <span className="text-gray-400 font-medium">Logged in:</span>
+            <div className="flex items-center gap-2">
+              {/* Ikon Vektor SVG User */}
+              <svg className="w-4 h-4 text-[#C92C1E] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className="font-extrabold">{loggedInUser} ({userRole})</span>
+              {/* Nama User Terpisah (Warna Merah) */}
+              <span className="text-sm font-extrabold text-[#C92C1E] tracking-tight">{loggedInUser}</span>
+              {/* Capsule Pill Role Terpisah (Background Merah Muda & Border Tipis) */}
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-200 bg-red-50 text-[#C92C1E] uppercase tracking-wider shadow-sm">
+                {userRole}
+              </span>
             </div>
           </div>
         </div>
         
         <div className="flex flex-wrap items-center gap-2 mt-2 md:mt-0">
-          {/* 🛠️ PERBAIKAN: Mengganti emoji 📥 dengan ikon vektor SVG Document Download yang rapi */}
           <button
             onClick={handleExportChartData}
             className="px-4 py-2 text-xs font-bold text-gray-700 bg-white border border-[#E5E5EA] rounded-xl hover:bg-gray-50 shadow-sm transition cursor-pointer flex items-center gap-2"

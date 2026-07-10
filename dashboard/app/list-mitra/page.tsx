@@ -43,11 +43,11 @@ export default function ListMitraPage() {
   // Helper nama panggilan pendek
   const dapatkanNamaPanggilan = (namaLengkap: string) => {
     if (!namaLengkap) return "Satria";
-    const namaKecil = namaLengkap.toLowerCase().trim();
-    if (namaKecil.includes("satria")) return "Satria";
-    if (namaKecil.includes("boby") || namaKecil.includes("pak boby") || namaKecil.includes("bobbi")) return "Boby";
-    if (namaKecil.includes("lydia") || namaKecil.includes("lidya")) return "Lydia";
-    if (namaKecil.includes("laura")) return "Laura";
+    const namaKecKecil = namaLengkap.toLowerCase().trim();
+    if (namaKecKecil.includes("satria")) return "Satria";
+    if (namaKecKecil.includes("boby") || namaKecKecil.includes("pak boby") || namaKecKecil.includes("bobbi")) return "Boby";
+    if (namaKecKecil.includes("lydia") || namaKecKecil.includes("lidya")) return "Lydia";
+    if (namaKecKecil.includes("laura")) return "Laura";
     return namaLengkap.split(" ")[0];
   };
 
@@ -254,7 +254,6 @@ export default function ListMitraPage() {
     setIsEditMode(true);
   };
 
-  // 🌟 SINKRONISASI EKSPOR EXCEL (Telah Didefinisikan Sebelum Render)
   const handleExportExcel = async () => {
     if (filteredData.length === 0) {
       alert("Tidak ada data master mitra terfilter yang tersedia untuk diekspor pada periode ini.");
@@ -336,11 +335,24 @@ export default function ListMitraPage() {
         <div>
           <h1 className="text-2xl font-black tracking-tight">Data List Mitra</h1>
           <p className="text-xs text-gray-500 mt-0.5 font-medium">Manajemen ekosistem kemitraan korporasi & pelacakan referral harian.</p>
-          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-1.5">
-            <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            Logged in: <span className="text-[#007AFF] font-black">{isSessionReady ? loggedInUser : "Loading..."}</span>
+          <div className="text-xs text-gray-400 font-bold mt-1 flex items-center gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5">
+              <svg className="w-3.5 h-3.5 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              </svg>
+              Logged in: <span className="text-[#C92C1E] font-black">{isSessionReady ? loggedInUser : "Loading..."}</span>
+            </div>
+            
+            {/* BADGE SYSTEM TERKONDISIKAN SECARA DINAMIS DAN SERASI BERWARNA MERAH */}
+            {userRole.toLowerCase() === "admin" ? (
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-200 bg-red-50 text-[#C92C1E] uppercase tracking-wider shadow-sm">
+                Admin
+              </span>
+            ) : (
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-200 bg-red-50 text-[#C92C1E] uppercase tracking-wider shadow-sm">
+                Sales
+              </span>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -355,7 +367,7 @@ export default function ListMitraPage() {
           </button>
           <button 
             onClick={() => { resetForm(); setIsModalOpen(true); }}
-            className="px-5 py-2.5 bg-[#007AFF] text-white rounded-xl font-bold text-xs shadow-md hover:bg-blue-600 transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-5 py-2.5 bg-[#C92C1E] text-white rounded-xl font-bold text-xs shadow-md hover:bg-[#A82216] transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
@@ -370,23 +382,23 @@ export default function ListMitraPage() {
         <div className="flex flex-col md:flex-row items-center gap-3 w-full md:w-auto flex-wrap">
           <div className="relative w-full sm:w-64">
             <span className="absolute inset-y-0 left-3 flex items-center text-gray-400">
-              <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <svg className="w-4 h-4 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
             </span>
             <input 
               type="text" placeholder="Cari Brand, Owner, atau PIC..." value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-200 p-2 pl-9 pr-4 py-2 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none"
+              className="w-full bg-gray-50 border border-gray-200 p-2 pl-9 pr-4 py-2 rounded-xl text-xs font-semibold text-gray-700 focus:outline-none focus:bg-white focus:border-[#C92C1E] transition-all"
             />
           </div>
 
           {isSessionReady && userRole.toLowerCase() === "admin" && (
-            <div className="flex items-center gap-2 bg-blue-50/50 border border-blue-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
-              <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <div className="flex items-center gap-2 bg-red-50/50 border border-red-200 px-3 py-1.5 rounded-xl w-full sm:w-auto">
+              <svg className="w-3.5 h-3.5 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className="text-[11px] font-bold text-[#007AFF] uppercase whitespace-nowrap">PIC:</span>
+              <span className="text-[11px] font-bold text-[#C92C1E] uppercase whitespace-nowrap">PIC:</span>
               <select
                 value={picFilter} onChange={(e) => setPicFilter(e.target.value)}
                 className="bg-transparent text-xs font-bold text-gray-700 focus:outline-none cursor-pointer"
@@ -400,8 +412,8 @@ export default function ListMitraPage() {
           )}
 
           <div className="flex bg-[#F5F5F7] p-1 rounded-xl border border-gray-200">
-            <button type="button" onClick={() => setModeFilter("harian")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "harian" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"}`}>Harian</button>
-            <button type="button" onClick={() => setModeFilter("bulanan")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "bulanan" ? "bg-white text-[#007AFF] shadow-sm" : "text-gray-500"}`}>Bulanan</button>
+            <button type="button" onClick={() => setModeFilter("harian")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "harian" ? "bg-white text-[#C92C1E] shadow-sm" : "text-gray-500"}`}>Harian</button>
+            <button type="button" onClick={() => setModeFilter("bulanan")} className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition cursor-pointer ${modeFilter === "bulanan" ? "bg-white text-[#C92C1E] shadow-sm" : "text-gray-500"}`}>Bulanan</button>
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
@@ -425,7 +437,7 @@ export default function ListMitraPage() {
         ) : filteredData.length === 0 ? (
           <div className="text-center py-20 bg-white border border-dashed rounded-3xl text-gray-400 text-xs font-medium">
             <svg className="w-12 h-12 text-gray-300 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 01-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.514 13H4" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0a2 2 0 00-2 2H6a2 2 0 01-2-2m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.514 13H4" />
             </svg>
             Tidak ada data master mitra ditemukan.
           </div>
@@ -444,7 +456,7 @@ export default function ListMitraPage() {
                   render: (item: any) => {
                     const kat = item.kategoriMitra || "-";
                     let badgeStyle = "bg-amber-50 text-amber-700 border-amber-200";
-                    if (kat.includes("REFERAL")) badgeStyle = "bg-blue-50 text-blue-700 border-blue-200";
+                    if (kat.includes("REFERAL")) badgeStyle = "bg-red-50 text-[#C92C1E] border-red-200";
                     else if (kat.includes("AFILIASI")) badgeStyle = "bg-purple-50 text-purple-700 border-purple-200";
 
                     return (
@@ -464,104 +476,148 @@ export default function ListMitraPage() {
 
       {/* POP-UP MODAL DATA */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-xl space-y-4 border border-[#E5E5EA] max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center border-b pb-3">
-              <h2 className="text-lg font-black tracking-tight text-[#1D1D1F] flex items-center gap-1.5">
-                <svg className="w-5 h-5 text-gray-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl space-y-5 border border-gray-100 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3 border-red-100">
+              <div>
+                <h2 className="text-md font-bold text-[#1D1D1F] flex items-center gap-1.5">
+                  <svg className="w-4 h-4 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  {selectedRecord && !isEditMode ? "Rincian Data Master Database Mitra" : isEditMode ? "Perbarui Data Master Mitra" : "Registrasi Record Master Mitra Baru"}
+                </h2>
+                <p className="text-[11px] text-gray-400 font-medium mt-0.5">Sistem otomatis mengunci PIC berdasarkan akun login aktif.</p>
+              </div>
+              <button 
+                type="button" 
+                onClick={() => setIsModalOpen(false)} 
+                className="text-gray-400 text-sm p-1.5 hover:bg-gray-100 hover:text-[#C92C1E] rounded-xl cursor-pointer transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
-                {selectedRecord && !isEditMode ? "Rincian Data Master Database Mitra" : isEditMode ? "Perbarui Data Master Mitra" : "Registrasi Record Master Mitra Baru"}
-              </h2>
-              <button type="button" onClick={() => setIsModalOpen(false)} className="text-[#86868B] text-lg hover:text-black cursor-pointer">✕</button>
+              </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-4 text-xs font-bold text-[#515154]">
-              <div className="flex flex-col gap-1.5 bg-gray-50 p-4 rounded-2xl border">
-                <label className="text-gray-700">Tanggal Operasional Laporan</label>
-                <input type="date" name="tanggalInput" value={formInput.tanggalInput} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border p-3 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] disabled:bg-[#F5F5F7] uppercase focus:outline-none" required />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-gray-50/50 p-4 rounded-2xl border">
+            <form onSubmit={handleSave} className="space-y-4 text-xs font-bold text-gray-500">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                  <label>Kategori Utama</label>
-                  {selectedRecord && !isEditMode ? (
-                    <input type="text" value={formInput.kategori} disabled className="border p-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 focus:outline-none" />
-                  ) : (
-                    <select name="kategori" value={formInput.kategori} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] focus:outline-none">
-                      <option value="REFERAL (Berlangganan)">REFERAL (Berlangganan)</option>
-                      <option value="AFILIASI (Eks. Mesin, Rak, Dll)">AFILIASI (Eks. Mesin, Rak, Dll)</option>
-                      <option value="FRANCHISE (Jual Brand)">FRANCHISE (Jual Brand)</option>
-                    </select>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label>Sub Kategori Kemitraan</label>
-                  {selectedRecord && !isEditMode ? (
-                    <input type="text" value={formInput.kategoriSub} disabled className="border p-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 focus:outline-none" />
-                  ) : (
-                    <select name="kategoriSub" value={formInput.kategoriSub} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] focus:outline-none">
-                      <option value="Mitra Referral">Mitra Referral</option>
-                      <option value="Mitra Corporated">Mitra Corporated</option>
-                      <option value="Vendor Utama">Vendor Utama</option>
-                      <option value="Personal Affiliate">Personal Affiliate</option>
-                    </select>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label>PIC</label>
-                  <input type="text" name="picNasabah" value={formInput.picNasabah} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-black text-[#007AFF] bg-gray-100 cursor-not-allowed focus:outline-none" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 bg-blue-50/10 p-4 rounded-2xl border border-dashed">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-blue-900">Bulan Terdaftar (Dapat Diedit)</label>
-                  {selectedRecord && !isEditMode ? (
-                    <input type="text" value={formInput.bulanTerdaftar} disabled className="border p-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-500 focus:outline-none" />
-                  ) : (
-                    <select name="bulanTerdaftar" value={formInput.bulanTerdaftar} onChange={handleInputChange} className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] focus:outline-none cursor-pointer">
-                      {listBulan.map((bln) => (
-                        <option key={bln} value={bln}>{bln}</option>
-                      ))}
-                    </select>
-                  )}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-blue-900">Tahun Buku (Dapat Diedit)</label>
+                  <label className="text-gray-600">Tanggal Operasional Laporan</label>
                   <input 
-                    type="number" name="tahun" placeholder="Contoh: 2025" 
-                    value={formInput.tahun} onChange={handleInputChange} 
-                    disabled={selectedRecord && !isEditMode} 
-                    className="border p-2.5 rounded-xl text-sm font-semibold bg-white text-[#1D1D1F] disabled:bg-gray-100 focus:outline-none" 
-                    required 
+                    type="date" name="tanggalInput" value={formInput.tanggalInput} 
+                    onChange={handleInputChange} disabled={selectedRecord && !isEditMode} 
+                    className="border border-[#E5E5EA] p-3 rounded-xl text-sm font-semibold text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7] uppercase cursor-pointer" required 
                   />
                 </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="flex flex-col gap-1.5">
-                  <label>Kode Owner</label>
-                  <input type="text" name="kodeOwner" placeholder="Contoh: 11165" value={formInput.kodeOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border p-2.5 rounded-xl text-sm font-medium focus:outline-none disabled:bg-gray-100" />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label>Nama Owner</label>
-                  <input type="text" name="owner" placeholder="Nama owner" value={formInput.owner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border p-2.5 rounded-xl text-sm font-medium focus:outline-none disabled:bg-gray-100" required />
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label>Brand / Nama Toko</label>
-                  <input type="text" name="brand" placeholder="Nama brand laundry" value={formInput.brand} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border p-2.5 rounded-xl text-sm font-medium focus:outline-none disabled:bg-gray-100" required />
+                  <label className="text-gray-600">PIC</label>
+                  <input type="text" name="picNasabah" value={formInput.picNasabah} disabled className="border border-red-200 p-3 rounded-xl text-sm font-black text-[#C92C1E] bg-red-50/30 cursor-not-allowed focus:outline-none" />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 bg-emerald-50/20 p-4 rounded-2xl border border-emerald-100">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-emerald-900">Total Akuisisi Referal</label>
-                  <input type="number" name="totalAkuisisiReferal" value={formInput.totalAkuisisiReferal} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} placeholder="0" className="border p-2.5 rounded-xl text-sm font-medium bg-white text-emerald-700 focus:outline-none disabled:bg-gray-100" />
+              {/* Kategori Utama & Sub (Box Merah/Rose Kontainer Report) */}
+              <div className="bg-red-50/40 border border-red-100 p-4 rounded-2xl space-y-3">
+                <span className="text-[10px] font-black text-[#C92C1E] bg-red-100/60 px-2.5 py-0.5 rounded-md uppercase">Kategori Kemitraan Utama</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#C92C1E]/80">Kategori Utama</label>
+                    {selectedRecord && !isEditMode ? (
+                      <input type="text" value={formInput.kategori} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-gray-100 disabled:bg-[#F5F5F7]" />
+                    ) : (
+                      <select name="kategori" value={formInput.kategori} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white">
+                        <option value="REFERAL (Berlangganan)">REFERAL (Berlangganan)</option>
+                        <option value="AFILIASI (Eks. Mesin, Rak, Dll)">AFILIASI (Eks. Mesin, Rak, Dll)</option>
+                        <option value="FRANCHISE (Jual Brand)">FRANCHISE (Jual Brand)</option>
+                      </select>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#C92C1E]/80">Sub Kategori Kemitraan</label>
+                    {selectedRecord && !isEditMode ? (
+                      <input type="text" value={formInput.kategoriSub} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-gray-100 disabled:bg-[#F5F5F7]" />
+                    ) : (
+                      <select name="kategoriSub" value={formInput.kategoriSub} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white">
+                        <option value="Mitra Referral">Mitra Referral</option>
+                        <option value="Mitra Corporated">Mitra Corporated</option>
+                        <option value="Vendor Utama">Vendor Utama</option>
+                        <option value="Personal Affiliate">Personal Affiliate</option>
+                      </select>
+                    )}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-emerald-900">Total Referral</label>
-                  <input type="number" name="totalReferral" value={formInput.totalReferral} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} placeholder="0" className="border p-2.5 rounded-xl text-sm font-medium bg-white text-emerald-700 focus:outline-none disabled:bg-gray-100" />
+              </div>
+
+              {/* Periode Terdaftar Container */}
+              <div 
+                className="p-4 rounded-2xl space-y-3"
+                style={{
+                  backgroundColor: "#FFF5F5",
+                  border: "1px solid #FEE2E2"
+                }}
+              >
+                <span 
+                  className="text-[10px] font-black px-2.5 py-0.5 rounded-md uppercase"
+                  style={{ color: "#C92C1E", background: "rgba(239, 68, 68, 0.15)" }}
+                >
+                  Periode Buku Terdaftar
+                </span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label style={{ color: "#C92C1E" }}>Bulan Terdaftar (Dapat Diedit)</label>
+                    {selectedRecord && !isEditMode ? (
+                      <input type="text" value={formInput.bulanTerdaftar} disabled className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none bg-gray-100 disabled:bg-[#F5F5F7]" />
+                    ) : (
+                      <select name="bulanTerdaftar" value={formInput.bulanTerdaftar} onChange={handleInputChange} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none cursor-pointer focus:border-[#C92C1E] transition-colors bg-white">
+                        {listBulan.map((bln) => (
+                          <option key={bln} value={bln}>{bln}</option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label style={{ color: "#C92C1E" }}>Tahun Buku (Dapat Diedit)</label>
+                    <input 
+                      type="number" name="tahun" placeholder="Contoh: 2025" 
+                      value={formInput.tahun} onChange={handleInputChange} 
+                      disabled={selectedRecord && !isEditMode} 
+                      className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-bold text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" 
+                      required 
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Rincian Identitas Owner Box */}
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-2xl space-y-3">
+                <span className="text-[10px] font-black text-gray-500 bg-gray-200/80 px-2.5 py-0.5 rounded-md uppercase">Identitas Pemilik & Toko</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-gray-600">Kode Owner</label>
+                    <input type="text" name="kodeOwner" placeholder="Contoh: 11165" value={formInput.kodeOwner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-gray-600">Nama Owner</label>
+                    <input type="text" name="owner" placeholder="Nama owner" value={formInput.owner} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" required />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-gray-600">Brand / Nama Toko</label>
+                    <input type="text" name="brand" placeholder="Nama brand laundry" value={formInput.brand} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" required />
+                  </div>
+                </div>
+              </div>
+
+              {/* Parameter Akumulasi Nilai Referral */}
+              <div className="bg-red-50/40 border border-red-100 p-4 rounded-2xl space-y-3">
+                <span className="text-[10px] font-black text-[#C92C1E] bg-red-100/60 px-2.5 py-0.5 rounded-md uppercase">Akumulasi Performansi Referral</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#C92C1E]/80">Total Akuisisi Referal</label>
+                    <input type="number" name="totalAkuisisiReferal" value={formInput.totalAkuisisiReferal} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-[#C92C1E]/80">Total Referral</label>
+                    <input type="number" name="totalReferral" value={formInput.totalReferral} onChange={handleInputChange} disabled={selectedRecord && !isEditMode} placeholder="0" className="border border-[#E5E5EA] p-2.5 rounded-xl text-sm font-medium text-gray-800 focus:outline-none focus:border-[#C92C1E] transition-colors bg-white disabled:bg-[#F5F5F7]" />
+                  </div>
                 </div>
               </div>
 
@@ -570,17 +626,17 @@ export default function ListMitraPage() {
                 <div>
                   {selectedRecord && !isEditMode && (
                     <div className="flex gap-2">
-                      <button type="button" onClick={handleActivateEditMode} className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold text-xs transition cursor-pointer flex items-center gap-1">
+                      <button type="button" onClick={handleActivateEditMode} className="px-4 py-2 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 font-bold hover:bg-amber-100 text-xs transition cursor-pointer flex items-center gap-1">
                         <svg className="w-3.5 h-3.5 text-amber-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
-                        Edit
+                        Ubah / Edit
                       </button>
-                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-rose-50 text-rose-700 border border-rose-200 font-bold text-xs transition cursor-pointer flex items-center gap-1">
-                        <svg className="w-3.5 h-3.5 text-rose-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <button type="button" onClick={handleDelete} className="px-4 py-2 rounded-xl bg-red-50 text-[#C92C1E] border border-red-200 font-bold hover:bg-red-100 text-xs transition cursor-pointer flex items-center gap-1">
+                        <svg className="w-3.5 h-3.5 text-[#C92C1E]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                         </svg>
-                        Hapus
+                        Hapus Master
                       </button>
                     </div>
                   )}
@@ -588,7 +644,7 @@ export default function ListMitraPage() {
                 <div className="flex gap-3">
                   <button type="button" onClick={() => setIsModalOpen(false)} className="px-4 py-2.5 rounded-xl border border-gray-200 font-bold text-gray-500 hover:bg-gray-50 text-sm cursor-pointer">{selectedRecord && !isEditMode ? "Selesai" : "Batal"}</button>
                   {(isEditMode || !selectedRecord) && (
-                    <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#007AFF] text-white font-bold text-sm shadow-md cursor-pointer">{isEditMode ? "Simpan Perubahan" : "Simpan"}</button>
+                    <button type="submit" className="px-5 py-2.5 rounded-xl bg-[#C92C1E] text-white font-bold hover:bg-[#A82216] text-sm shadow-md cursor-pointer transition-colors">{isEditMode ? "Simpan Perubahan" : "Simpan Master"}</button>
                   )}
                 </div>
               </div>

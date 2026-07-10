@@ -162,30 +162,22 @@ export default function JobdeskDailyPage() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between border-b border-gray-200 pb-5 gap-4">
         <div>
           <h1 className="text-3xl font-black tracking-tight text-gray-800">Jobdesk Daily</h1>
-          <div className="text-sm text-gray-500 mt-1 font-medium flex items-center gap-1.5 flex-wrap">
-            <span>Lembar kerja digital interaktif Tim Sales.</span>
+          <div className="text-sm text-gray-500 mt-2 font-medium flex items-center gap-2.5 flex-wrap">
+            <span className="text-gray-400 font-medium">Logged in:</span>
             
-            {/* 🌟 FIXED CLEAN: Hanya 1 Ikon SVG terbaru & nama user panggilan */}
-            <span className="flex items-center gap-1 text-gray-400 font-bold ml-1">
-              <svg className="w-3.5 h-3.5 text-[#007AFF]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            {/* 🛠️ SINKRONISASI VISUAL BADGE: Format terpisah persis seperti gambar dengan warna Merah Piposmart */}
+            <div className="flex items-center gap-2">
+              {/* Ikon Vektor SVG User */}
+              <svg className="w-4 h-4 text-[#C92C1E] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
-              <span className="text-gray-700 font-black">{loggedInUser}</span>
-            </span>
-
-            {/* BADGE TAG ROLE DINAMIS */}
-            {userRole.toLowerCase() === "admin" ? (
-              <span className="text-[10px] bg-blue-50 text-[#007AFF] border border-blue-200 px-2 py-0.5 rounded-full font-black uppercase tracking-wider flex items-center gap-0.5">
-                <svg className="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4" />
-                </svg>
-                Admin
+              {/* Nama User Terpisah (Warna Merah Piposmart) */}
+              <span className="text-sm font-extrabold text-[#C92C1E] tracking-tight">{loggedInUser}</span>
+              {/* Capsule Pill Role Terpisah (Background Merah Muda & Border Tipis) */}
+              <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full border border-red-200 bg-red-50 text-[#C92C1E] uppercase tracking-wider shadow-sm">
+                {userRole}
               </span>
-            ) : (
-              <span className="text-[10px] bg-gray-50 text-gray-500 border border-gray-200 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">
-                Sales Tim
-              </span>
-            )}
+            </div>
           </div>
         </div>
 
@@ -199,7 +191,7 @@ export default function JobdeskDailyPage() {
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="text-[13px] font-semibold text-gray-700 bg-gray-50 px-3 py-1.5 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-[#007AFF] transition-all uppercase cursor-pointer"
+            className="text-[13px] font-semibold text-gray-700 bg-gray-50 px-3 py-1.5 rounded-xl border border-transparent focus:outline-none focus:bg-white focus:border-[#C92C1E] transition-all uppercase cursor-pointer"
           />
         </div>
       </div>
@@ -243,12 +235,12 @@ export default function JobdeskDailyPage() {
                             placeholder="Isi target..."
                             onChange={(e) => setEditingValue(e.target.value)}
                             onKeyDown={(e) => e.key === "Enter" && saveTarget(job.id)}
-                            className="border text-center text-xs font-bold px-2 py-1 rounded-lg w-28 bg-white border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            className="border text-center text-xs font-bold px-2 py-1 rounded-lg w-28 bg-white border-[#C92C1E] focus:outline-none focus:ring-1 focus:ring-[#C92C1E]"
                             autoFocus
                           />
                           <button 
                             onClick={() => saveTarget(job.id)}
-                            className="bg-blue-600 text-white font-bold text-[11px] px-2 py-1 rounded-lg hover:bg-blue-700 shadow-sm"
+                            className="bg-[#C92C1E] text-white font-bold text-[11px] px-2 py-1 rounded-lg hover:bg-[#A82216] shadow-sm cursor-pointer"
                           >
                             OK
                           </button>
@@ -281,7 +273,7 @@ export default function JobdeskDailyPage() {
                           type="checkbox"
                           checked={isChecked || false}
                           onChange={() => handleCheckboxChange(idx)}
-                          className="w-5 h-5 rounded-md border-gray-300 text-[#007AFF] focus:ring-[#007AFF]/30 focus:ring-2 transition-all cursor-pointer bg-gray-50"
+                          className="w-5 h-5 rounded-md border-gray-300 text-[#C92C1E] focus:ring-[#C92C1E]/30 focus:ring-2 transition-all cursor-pointer bg-gray-50 accent-[#C92C1E]"
                         />
                       </label>
                     </td>
